@@ -80,6 +80,11 @@
           <span class="sim-btn-arrow">↗</span>
         </a>
 
+        <!-- Light/Dark Theme Switcher -->
+        <button type="button" class="btn btn-subtle btn-sm" id="btn-theme-toggle" aria-label="Toggle Light and Dark Mode" title="Toggle Light/Dark Theme">
+          <span id="theme-toggle-icon">☀️</span>
+        </button>
+
         <!-- Data Tools Dropdown -->
         <div class="data-tools-dropdown" id="data-tools-dropdown">
           <button type="button" class="btn btn-subtle btn-sm data-tools-btn" id="btn-data-tools-toggle" aria-expanded="false" aria-haspopup="true" title="Database & Session Tools">
@@ -621,17 +626,20 @@
           <table class="quiet-table" aria-label="Risk Radar Records Table">
             <thead>
               <tr>
-                <th>Account / Reference</th>
-                <th>Risk Classification</th>
-                <th>Risk Probability</th>
-                <th>Confidence</th>
-                <th>Evaluated At</th>
+                <th class="sortable" onclick="toggleRadarSort('record_ref')" id="th-sort-record_ref" title="Sort by Account ID">Account / Reference <span class="sort-icon" id="sort-icon-record_ref">↕</span></th>
+                <th class="sortable" onclick="toggleRadarSort('risk_tier')" id="th-sort-risk_tier" title="Sort by Risk Tier">Risk Classification <span class="sort-icon" id="sort-icon-risk_tier">↕</span></th>
+                <th class="sortable sort-active" onclick="toggleRadarSort('probability')" id="th-sort-probability" title="Sort by Risk Probability">Risk Probability <span class="sort-icon" id="sort-icon-probability">▼</span></th>
+                <th class="sortable" onclick="toggleRadarSort('confidence')" id="th-sort-confidence" title="Sort by Model Confidence">Confidence <span class="sort-icon" id="sort-icon-confidence">↕</span></th>
+                <th class="sortable" onclick="toggleRadarSort('created_at')" id="th-sort-created_at" title="Sort by Evaluation Date">Evaluated At <span class="sort-icon" id="sort-icon-created_at">↕</span></th>
                 <th>Action</th>
               </tr>
             </thead>
             <tbody id="radar-records-tbody"></tbody>
           </table>
         </div>
+
+        <!-- Pagination Controls Bar -->
+        <div class="table-pagination-bar" id="radar-pagination-container"></div>
       </div>
     </section>
 

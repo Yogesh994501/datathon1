@@ -12,9 +12,18 @@ const Reports = {
     if (!rows.length) return;
 
     const headers = Object.keys(rows[0]);
+    const sanitizeCsvCell = (val) => {
+      let str = String(val ?? '');
+      // Security: Prepend apostrophe if cell begins with spreadsheet formula triggers (=, +, -, @, tab, CR)
+      if (/^[=+\-@\t\r]/.test(str)) {
+        str = "'" + str;
+      }
+      return `"${str.replace(/"/g, '""')}"`;
+    };
+
     const csvContent = [
       headers.join(','),
-      ...rows.map(r => headers.map(h => `"${String(r[h] || '').replace(/"/g, '""')}"`).join(','))
+      ...rows.map(r => headers.map(h => sanitizeCsvCell(r[h])).join(','))
     ].join('\n');
 
     this._downloadBlob(csvContent, 'predictiq_predictions_export.csv', 'text/csv;charset=utf-8;');

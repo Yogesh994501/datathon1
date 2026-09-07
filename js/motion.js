@@ -652,6 +652,22 @@ const MotionSceneController = (() => {
 
     updateScrollProgress();
 
+    // Conserve CPU & Battery: Pause canvas animation when tab is inactive or hidden
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) {
+        isRunning = false;
+        if (rafId) {
+          cancelAnimationFrame(rafId);
+          rafId = null;
+        }
+      } else {
+        if (!isRunning && !reducedMotion) {
+          isRunning = true;
+          rafId = requestAnimationFrame(render);
+        }
+      }
+    });
+
     isRunning = true;
     if (!reducedMotion) {
       rafId = requestAnimationFrame(render);

@@ -58,3 +58,45 @@
   --focus-ring: 2px solid rgba(217, 164, 65, 0.6);
   --focus-offset: 2px;
 }
+
+/* Light Theme Specification: High-contrast executive daylight mode */
+[data-theme="light"] {
+  --color-base: #F8FAFC;
+  --color-panel: #FFFFFF;
+  --color-panel-alt: #F1F5F9;
+  --color-panel-hover: #F8FAFC;
+  --color-accent: #B8852B;
+  --color-accent-subtle: rgba(184, 133, 43, 0.12);
+  --color-accent-muted: #8E641B;
+  --color-secondary-data: #0D9488;
+  --color-secondary-subtle: rgba(13, 148, 136, 0.12);
+  
+  --color-text: #0F172A;
+  --color-text-muted: #334155;
+  --color-text-faint: #64748B;
+  --color-line: #E2E8F0;
+  --color-line-light: #CBD5E1;
+
+  --color-risk-high: #D97706;
+  --color-risk-high-bg: rgba(217, 119, 6, 0.12);
+  --color-risk-medium: #B45309;
+  --color-risk-medium-bg: rgba(180, 83, 9, 0.12);
+  --color-risk-low: #0D9488;
+  --color-risk-low-bg: rgba(13, 148, 136, 0.12);
+
+  --border-hairline: 1px solid rgba(0, 0, 0, 0.08);
+  --border-accent: 1px solid rgba(184, 133, 43, 0.35);
+
+  --glass-large-bg: rgba(255, 255, 255, 0.88);
+  --glass-large-border: 1px solid rgba(0, 0, 0, 0.08);
+  --glass-large-shadow: 0 16px 48px rgba(0, 0, 0, 0.06), inset 0 1px 0 rgba(255, 255, 255, 1);
+
+  --glass-medium-bg: rgba(255, 255, 255, 0.95);
+  --glass-medium-border: 1px solid rgba(0, 0, 0, 0.08);
+  --glass-medium-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+
+  --glass-small-bg: rgba(255, 255, 255, 0.9);
+  --glass-small-border: 1px solid rgba(0, 0, 0, 0.08);
+
+  --focus-ring: 2px solid rgba(184, 133, 43, 0.6);
+}

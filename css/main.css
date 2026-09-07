@@ -2168,4 +2168,272 @@ input[type="range"].briefing-slider::-moz-range-thumb {
   font-weight: 600;
 }
 
+/* ==========================================================================
+   TABLE SORTING & PAGINATION STYLES
+   ========================================================================== */
+.quiet-table th.sortable {
+  cursor: pointer;
+  user-select: none;
+  transition: color 0.15s ease, background 0.15s ease;
+}
+
+.quiet-table th.sortable:hover {
+  color: var(--color-accent);
+}
+
+.sort-icon {
+  display: inline-block;
+  margin-left: 0.35rem;
+  font-size: 0.75rem;
+  opacity: 0.5;
+  transition: transform 0.15s ease, opacity 0.15s ease;
+}
+
+.quiet-table th.sort-active .sort-icon {
+  opacity: 1;
+  color: var(--color-accent);
+}
+
+.table-pagination-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 1.15rem;
+  padding-top: 0.85rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  font-size: 0.85rem;
+}
+
+.pagination-info {
+  color: var(--color-text-muted);
+}
+
+.pagination-buttons {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.btn-page {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: var(--color-text);
+  padding: 0.35rem 0.65rem;
+  border-radius: 6px;
+  font-size: 0.82rem;
+  font-family: var(--font-heading);
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-page:hover:not(:disabled) {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+  background: rgba(217, 164, 65, 0.08);
+}
+
+.btn-page.active {
+  background: var(--color-accent);
+  color: #0B0F19;
+  border-color: var(--color-accent);
+  font-weight: 700;
+}
+
+.btn-page:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+/* Theme Toggle Button */
+#btn-theme-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 34px;
+  padding: 0;
+  border-radius: 8px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+#btn-theme-toggle:hover {
+  transform: scale(1.05);
+}
+
+/* ==========================================================================
+   LIGHT THEME COMPONENT OVERRIDES
+   ========================================================================== */
+[data-theme="light"] body {
+  background-color: var(--color-base);
+  color: var(--color-text);
+}
+
+[data-theme="light"] .bg-grid-texture {
+  background-image: 
+    linear-gradient(to right, rgba(0, 0, 0, 0.05) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(0, 0, 0, 0.05) 1px, transparent 1px);
+}
+
+[data-theme="light"] .panel {
+  background: var(--color-panel);
+  border: 1px solid var(--color-line);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
+}
+
+[data-theme="light"] .panel:hover {
+  border-color: var(--color-line-light);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.07);
+}
+
+[data-theme="light"] .panel-header {
+  border-bottom: 1px solid var(--color-line);
+}
+
+[data-theme="light"] .app-header {
+  background: rgba(255, 255, 255, 0.92);
+  border-bottom: 1px solid var(--color-line);
+}
+
+[data-theme="light"] .nav-drawer {
+  background: #FFFFFF;
+  border-right: 1px solid var(--color-line);
+}
+
+[data-theme="light"] .pipeline-step {
+  background: #FFFFFF;
+  border: 1px solid var(--color-line);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
+}
+
+[data-theme="light"] .pipeline-step:hover {
+  background: #F8FAFC;
+  border-color: var(--color-accent);
+}
+
+[data-theme="light"] .pipeline-step.active {
+  background: #FEF3C7;
+  border-color: var(--color-accent);
+}
+
+[data-theme="light"] .stat-bar {
+  background: #FFFFFF;
+  border: 1px solid var(--color-line);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.03);
+}
+
+[data-theme="light"] .stat-cell {
+  border-right: 1px solid var(--color-line);
+}
+
+[data-theme="light"] .memo-card {
+  background: #F8FAFC;
+  border-left-color: var(--color-accent);
+}
+
+[data-theme="light"] .quiet-table th {
+  background: #F1F5F9;
+  color: var(--color-text-muted);
+  border-bottom: 1px solid var(--color-line);
+}
+
+[data-theme="light"] .quiet-table td {
+  border-bottom: 1px solid var(--color-line);
+}
+
+[data-theme="light"] .quiet-table tr:hover td {
+  background: #F8FAFC;
+}
+
+[data-theme="light"] .btn-subtle {
+  background: #F1F5F9;
+  color: var(--color-text);
+  border: 1px solid var(--color-line);
+}
+
+[data-theme="light"] .btn-subtle:hover {
+  background: #E2E8F0;
+}
+
+[data-theme="light"] .header-search-wrapper {
+  background: #F1F5F9;
+  border: 1px solid var(--color-line);
+}
+
+[data-theme="light"] .header-search-input {
+  color: var(--color-text);
+}
+
+[data-theme="light"] .header-status-pill {
+  background: #F1F5F9;
+  border: 1px solid var(--color-line);
+}
+
+[data-theme="light"] .btn-header-simulator {
+  background: #F1F5F9;
+  border: 1px solid var(--color-line);
+  color: var(--color-text);
+}
+
+[data-theme="light"] .btn-header-simulator:hover {
+  background: #E2E8F0;
+}
+
+[data-theme="light"] .data-tools-menu {
+  background: #FFFFFF;
+  border: 1px solid var(--color-line);
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.12);
+}
+
+[data-theme="light"] .data-tools-menu-item {
+  color: var(--color-text);
+}
+
+[data-theme="light"] .data-tools-menu-item:hover {
+  background: #F1F5F9;
+}
+
+[data-theme="light"] .domain-selector {
+  background: #F1F5F9;
+  border: 1px solid var(--color-line);
+}
+
+[data-theme="light"] .domain-btn {
+  color: var(--color-text-muted);
+}
+
+[data-theme="light"] .domain-btn.active {
+  background: #FFFFFF;
+  color: var(--color-text);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+[data-theme="light"] .table-pagination-bar {
+  border-top: 1px solid var(--color-line);
+}
+
+[data-theme="light"] .btn-page {
+  background: #F1F5F9;
+  border: 1px solid var(--color-line);
+  color: var(--color-text);
+}
+
+[data-theme="light"] .btn-page:hover:not(:disabled) {
+  background: #E2E8F0;
+  border-color: var(--color-accent);
+}
+
+[data-theme="light"] .btn-page.active {
+  background: var(--color-accent);
+  color: #FFFFFF;
+}
+
+[data-theme="light"] #signal-canvas {
+  opacity: 0.15;
+}
+
 

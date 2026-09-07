@@ -171,10 +171,11 @@ document.addEventListener('DOMContentLoaded', async () => {
   // 8. Setup Dataset Ingestion Studio Simulation
   setupDatasetUploadStudio(state);
 
-  // 8b. Setup Hamburger Navigation Drawer, Global Live Search, and Data Tools Dropdown
+  // 8b. Setup Hamburger Navigation Drawer, Global Live Search, Data Tools Dropdown, and Theme Switcher
   setupHamburgerDrawer();
   setupGlobalSearch();
   setupDataToolsDropdown();
+  setupThemeSwitcher();
 
   // 9. Subscribe to State Changes
   state.subscribe((s) => {
@@ -320,6 +321,29 @@ function setupDataToolsDropdown() {
       menu.classList.remove('active');
       toggleBtn.setAttribute('aria-expanded', 'false');
     });
+  });
+}
+
+function setupThemeSwitcher() {
+  const toggleBtn = document.getElementById('btn-theme-toggle');
+  const iconSpan = document.getElementById('theme-toggle-icon');
+  if (!toggleBtn) return;
+
+  const savedTheme = localStorage.getItem('predictiq_theme') || 'dark';
+  document.documentElement.setAttribute('data-theme', savedTheme);
+  if (iconSpan) {
+    iconSpan.textContent = savedTheme === 'light' ? '🌙' : '☀️';
+  }
+
+  toggleBtn.addEventListener('click', () => {
+    const currentTheme = document.documentElement.getAttribute('data-theme') || 'dark';
+    const nextTheme = currentTheme === 'light' ? 'dark' : 'light';
+    document.documentElement.setAttribute('data-theme', nextTheme);
+    localStorage.setItem('predictiq_theme', nextTheme);
+    if (iconSpan) {
+      iconSpan.textContent = nextTheme === 'light' ? '🌙' : '☀️';
+    }
+    showToast(`Switched to ${nextTheme === 'light' ? 'Light' : 'Dark'} Mode`, 'info');
   });
 }
 
@@ -963,26 +987,137 @@ function renderRiskRadarSection(state) {
     openRecordInspector(recordId);
   });
 
+  // Sort records
+  const sortedRecords = sortRadarRecords(filtered, radarSortCol, radarSortDir);
+
+  // Update header sort classes & icons
+  const sortColumns = ['record_ref', 'risk_tier', 'probability', 'confidence', 'created_at'];
+  sortColumns.forEach(c => {
+    const th = document.getElementById(`th-sort-${c}`);
+    const icon = document.getElementById(`sort-icon-${c}`);
+    if (th && icon) {
+      if (c === radarSortCol) {
+        th.classList.add('sort-active');
+        icon.textContent = radarSortDir === 'asc' ? '▲' : '▼';
+      } else {
+        th.classList.remove('sort-active');
+        icon.textContent = '↕';
+      }
+    }
+  });
+
+  // Calculate pagination
+  const totalItems = sortedRecords.length;
+  const totalPages = Math.max(1, Math.ceil(totalItems / radarPageSize));
+  if (radarCurrentPage > totalPages) radarCurrentPage = totalPages;
+  if (radarCurrentPage < 1) radarCurrentPage = 1;
+
+  const startIdx = (radarCurrentPage - 1) * radarPageSize;
+  const endIdx = Math.min(startIdx + radarPageSize, totalItems);
+  const pageRecords = sortedRecords.slice(startIdx, endIdx);
+
   // Render tabular listing below scatter
   const tableBody = document.getElementById('radar-records-tbody');
   if (tableBody) {
-    tableBody.innerHTML = filtered.map(p => `
-      <tr style="cursor: pointer;" onclick="openRecordInspector('${p.id}')">
-        <td style="font-weight: 500;">${p.record_ref}</td>
-        <td>
-          <span class="badge ${p.risk_tier === 'high' ? 'badge-high' : (p.risk_tier === 'medium' ? 'badge-medium' : 'badge-low')}">
-            <span class="status-dot"></span>
-            ${p.outcome_label}
-          </span>
-        </td>
-        <td class="figure-serif">${p.probability}%</td>
-        <td class="figure-serif">${p.confidence}%</td>
-        <td style="color: var(--color-text-faint); font-size: 0.78rem;">${p.created_at}</td>
-        <td><button type="button" class="btn btn-subtle btn-sm" onclick="event.stopPropagation(); openRecordInspector('${p.id}')">Inspect</button></td>
-      </tr>
-    `).join('');
+    if (!pageRecords.length) {
+      tableBody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--color-text-faint); padding: 2.5rem;">No accounts found matching this filter criteria.</td></tr>`;
+    } else {
+      tableBody.innerHTML = pageRecords.map(p => `
+        <tr style="cursor: pointer;" onclick="openRecordInspector('${p.id}')">
+          <td style="font-weight: 500;">${p.record_ref}</td>
+          <td>
+            <span class="badge ${p.risk_tier === 'high' ? 'badge-high' : (p.risk_tier === 'medium' ? 'badge-medium' : 'badge-low')}">
+              <span class="status-dot"></span>
+              ${p.outcome_label}
+            </span>
+          </td>
+          <td class="figure-serif">${p.probability}%</td>
+          <td class="figure-serif">${p.confidence}%</td>
+          <td style="color: var(--color-text-faint); font-size: 0.78rem;">${p.created_at}</td>
+          <td><button type="button" class="btn btn-subtle btn-sm" onclick="event.stopPropagation(); openRecordInspector('${p.id}')">Inspect</button></td>
+        </tr>
+      `).join('');
+    }
+  }
+
+  // Render Pagination Bar
+  const paginationContainer = document.getElementById('radar-pagination-container');
+  if (paginationContainer) {
+    if (totalItems <= radarPageSize) {
+      paginationContainer.innerHTML = `
+        <div class="pagination-info">Showing all ${totalItems} accounts</div>
+        <div class="pagination-buttons"></div>
+      `;
+    } else {
+      let pageButtonsHtml = '';
+      for (let p = 1; p <= totalPages; p++) {
+        if (p === 1 || p === totalPages || Math.abs(p - radarCurrentPage) <= 1) {
+          pageButtonsHtml += `<button type="button" class="btn-page ${p === radarCurrentPage ? 'active' : ''}" onclick="changeRadarPage(${p})">${p}</button>`;
+        } else if (p === 2 && radarCurrentPage > 3) {
+          pageButtonsHtml += `<span style="padding: 0 4px; color: var(--color-text-faint);">…</span>`;
+        } else if (p === totalPages - 1 && radarCurrentPage < totalPages - 2) {
+          pageButtonsHtml += `<span style="padding: 0 4px; color: var(--color-text-faint);">…</span>`;
+        }
+      }
+
+      paginationContainer.innerHTML = `
+        <div class="pagination-info">Showing ${startIdx + 1}–${endIdx} of ${totalItems} accounts</div>
+        <div class="pagination-buttons">
+          <button type="button" class="btn-page" onclick="changeRadarPage(${radarCurrentPage - 1})" ${radarCurrentPage === 1 ? 'disabled' : ''}>← Prev</button>
+          ${pageButtonsHtml}
+          <button type="button" class="btn-page" onclick="changeRadarPage(${radarCurrentPage + 1})" ${radarCurrentPage === totalPages ? 'disabled' : ''}>Next →</button>
+        </div>
+      `;
+    }
   }
 }
+
+// Radar Sorting & Pagination State
+let radarSortCol = 'probability';
+let radarSortDir = 'desc';
+let radarCurrentPage = 1;
+const radarPageSize = 15;
+
+function sortRadarRecords(records, col, dir) {
+  const sorted = [...records];
+  sorted.sort((a, b) => {
+    let valA = a[col];
+    let valB = b[col];
+
+    if (col === 'risk_tier') {
+      const tierRank = { high: 3, medium: 2, low: 1 };
+      valA = tierRank[valA] || 0;
+      valB = tierRank[valB] || 0;
+    } else if (col === 'probability' || col === 'confidence') {
+      valA = Number(valA) || 0;
+      valB = Number(valB) || 0;
+    } else {
+      valA = String(valA || '').toLowerCase();
+      valB = String(valB || '').toLowerCase();
+    }
+
+    if (valA < valB) return dir === 'asc' ? -1 : 1;
+    if (valA > valB) return dir === 'asc' ? 1 : -1;
+    return 0;
+  });
+  return sorted;
+}
+
+window.toggleRadarSort = function(col) {
+  if (radarSortCol === col) {
+    radarSortDir = radarSortDir === 'asc' ? 'desc' : 'asc';
+  } else {
+    radarSortCol = col;
+    radarSortDir = col === 'record_ref' ? 'asc' : 'desc';
+  }
+  radarCurrentPage = 1;
+  renderRiskRadarSection(window.predictiqState);
+};
+
+window.changeRadarPage = function(page) {
+  radarCurrentPage = page;
+  renderRiskRadarSection(window.predictiqState);
+};
 
 window.filterRadarByMatrixQuadrant = function(quadrantType) {
   const state = window.predictiqState;
