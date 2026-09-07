@@ -32,13 +32,47 @@ const Pipeline = {
       }
     }
 
-    // Connect step clicks to app views
+    // Connect step clicks to app views & instant output jump
     const stepCards = document.querySelectorAll('.pipeline-step');
-    stepCards.forEach(card => {
-      card.addEventListener('click', (e) => {
+    stepCards.forEach((card) => {
+      const handleTrigger = (e) => {
+        // Update active step highlight
+        stepCards.forEach(c => c.classList.remove('active'));
+        card.classList.add('active');
+
         const targetView = card.getAttribute('data-target-view');
-        if (targetView && window.predictiqState) {
+        const targetSub = card.getAttribute('data-target-sub');
+
+        if (window.switchView && targetView) {
+          window.switchView(targetView);
+        } else if (window.predictiqState && window.predictiqState.setView && targetView) {
           window.predictiqState.setView(targetView);
+        }
+
+        // If specific sub-element is specified (e.g. drop zone or prep checklist), scroll specifically to it
+        if (targetSub) {
+          const subEl = document.getElementById(targetSub);
+          if (subEl) {
+            setTimeout(() => {
+              subEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              subEl.classList.add('pipeline-target-highlight');
+              setTimeout(() => subEl.classList.remove('pipeline-target-highlight'), 1800);
+            }, 80);
+          }
+        } else if (targetView) {
+          const viewEl = document.getElementById(`view-${targetView}`);
+          if (viewEl) {
+            viewEl.classList.add('pipeline-target-highlight');
+            setTimeout(() => viewEl.classList.remove('pipeline-target-highlight'), 1800);
+          }
+        }
+      };
+
+      card.addEventListener('click', handleTrigger);
+      card.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          handleTrigger(e);
         }
       });
     });

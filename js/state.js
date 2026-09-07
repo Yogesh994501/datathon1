@@ -148,6 +148,9 @@ class AppStateManager {
 
   setView(viewName) {
     this.currentView = viewName;
+    if (typeof window !== 'undefined' && window.switchView) {
+      window.switchView(viewName);
+    }
     this.notify();
   }
 

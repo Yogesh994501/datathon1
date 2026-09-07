@@ -26,10 +26,10 @@
   --color-risk-low: #6B8F8A;
   --color-risk-low-bg: rgba(107, 143, 138, 0.12);
 
-  /* Typography */
-  --font-heading: "Outfit", "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  --font-ui: "Plus Jakarta Sans", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  --font-serif: "Newsreader", "Playfair Display", "Charter", "Georgia", "Times New Roman", serif;
+  /* Typography: Clean, Simple, Modern Sans-Serif Stack (No AI serif / decorative artifacts) */
+  --font-heading: "Inter", "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-ui: "Inter", "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-serif: "Inter", "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   --font-mono: "JetBrains Mono", "SF Mono", "Fira Code", monospace;
 
   /* Sizing & Hairlines */

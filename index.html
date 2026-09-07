@@ -6,10 +6,10 @@
   <title>PredictIQ — AI Predictive Insight Dashboard</title>
   <meta name="description" content="PredictIQ: A sober, executive AI Decision Intelligence platform turning historical data into explainable forecasts and actions.">
   
-  <!-- Fonts: Outfit (modern geometric headings), Plus Jakarta Sans (refined UI), Inter, and Newsreader -->
+  <!-- Fonts: Clean, simple, modern sans-serif typography (Inter & Plus Jakarta Sans) -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&family=Outfit:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@500;600;700&display=swap" rel="stylesheet">
 
   <link rel="stylesheet" href="css/tokens.css">
   <link rel="stylesheet" href="css/main.css">
@@ -243,31 +243,31 @@
 
         <div class="pipeline-steps-grid">
           <!-- Step 1 -->
-          <div class="pipeline-step" data-target-view="dataset" style="cursor: pointer;" tabindex="0">
+          <div class="pipeline-step" data-target-view="dataset" data-target-sub="dataset-drop-zone" role="button" tabindex="0" title="Click to jump to Step 1: Upload Data">
             <div class="step-seq">Step 1</div>
             <div class="step-title">Upload Data</div>
             <div class="step-desc">Load spreadsheets or customer files into the in-browser database.</div>
           </div>
           <!-- Step 2 -->
-          <div class="pipeline-step" data-target-view="dataset" style="cursor: pointer;" tabindex="0">
+          <div class="pipeline-step" data-target-view="dataset" data-target-sub="prep-progress-container" role="button" tabindex="0" title="Click to jump to Step 2: Smart Clean-up">
             <div class="step-seq">Step 2</div>
             <div class="step-title">Smart Clean-up</div>
             <div class="step-desc">Auto-fills blank entries, removes duplicate rows, and standardizes numbers.</div>
           </div>
           <!-- Step 3 -->
-          <div class="pipeline-step" data-target-view="models" style="cursor: pointer;" tabindex="0">
+          <div class="pipeline-step" data-target-view="models" role="button" tabindex="0" title="Click to jump to Step 3: Compare AI Models">
             <div class="step-seq">Step 3</div>
             <div class="step-title">Compare AI Models</div>
             <div class="step-desc">Tests multiple algorithms side-by-side to pick the highest accuracy.</div>
           </div>
           <!-- Step 4 -->
-          <div class="pipeline-step" data-target-view="predictions" style="cursor: pointer;" tabindex="0">
+          <div class="pipeline-step" data-target-view="predictions" role="button" tabindex="0" title="Click to jump to Step 4: Risk Scores">
             <div class="step-seq">Step 4</div>
             <div class="step-title">Risk Scores</div>
             <div class="step-desc">Calculates likelihood and confidence for every account or customer.</div>
           </div>
           <!-- Step 5 -->
-          <div class="pipeline-step active" data-target-view="reports" style="cursor: pointer;" tabindex="0">
+          <div class="pipeline-step" data-target-view="reports" role="button" tabindex="0" title="Click to jump to Step 5: Action Plan & Reports">
             <div class="step-seq">Step 5</div>
             <div class="step-title">Action Plan</div>
             <div class="step-desc">Clear steps to protect revenue, prevent churn, and retain customers.</div>
