@@ -180,6 +180,21 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // 11. Setup Scroll Spy for navigation tabs
   setupScrollSpy();
+
+  // 12. Auto-navigate from URL hash or query param (?view=models etc)
+  function checkUrlNavigation() {
+    const params = new URLSearchParams(window.location.search);
+    const viewQuery = params.get('view');
+    const hash = window.location.hash.replace('#', '');
+    const target = viewQuery || hash;
+    if (target) {
+      setTimeout(() => {
+        switchView(target);
+      }, 200);
+    }
+  }
+  checkUrlNavigation();
+  window.addEventListener('hashchange', checkUrlNavigation);
 });
 
 function setupScrollSpy() {
@@ -543,8 +558,38 @@ function setupGlobalSearch() {
   }
 }
 
+function resolveViewAlias(name) {
+  if (!name) return 'overview';
+  const clean = name.toLowerCase().replace('sec-', '').replace('view-', '').trim();
+  const aliasMap = {
+    'dashboard': 'overview',
+    'overview': 'overview',
+    'briefing': 'overview',
+    'datascience': 'models',
+    'data-science': 'models',
+    'benchmark': 'models',
+    'models': 'models',
+    'analytics': 'predictions',
+    'prediction': 'predictions',
+    'predictions': 'predictions',
+    'radar': 'radar',
+    'risk-radar': 'radar',
+    'exports': 'reports',
+    'report': 'reports',
+    'reports': 'reports',
+    'dataset': 'dataset',
+    'settings': 'dataset',
+    'studio': 'dataset',
+    'simulator': 'simulator',
+    'what-if': 'simulator',
+    'whatif': 'simulator'
+  };
+  return aliasMap[clean] || clean;
+}
+
 function switchView(viewName) {
-  const target = document.getElementById(`view-${viewName}`);
+  const resolved = resolveViewAlias(viewName);
+  const target = document.getElementById(`view-${resolved}`) || document.getElementById(`view-${viewName}`);
   if (target) {
     target.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
@@ -552,7 +597,7 @@ function switchView(viewName) {
   // Update tabs
   const navTabs = document.querySelectorAll('.nav-tab');
   navTabs.forEach(tab => {
-    if (tab.getAttribute('data-view') === viewName) {
+    if (tab.getAttribute('data-view') === resolved) {
       tab.classList.add('active');
     } else {
       tab.classList.remove('active');
@@ -560,10 +605,10 @@ function switchView(viewName) {
   });
 
   if (window.MotionSceneController) {
-    window.MotionSceneController.setActiveSection(viewName);
+    window.MotionSceneController.setActiveSection(resolved);
   }
   if (window.Signal && window.Signal.setView) {
-    window.Signal.setView(viewName);
+    window.Signal.setView(resolved);
   }
 }
 
