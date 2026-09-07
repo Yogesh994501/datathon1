@@ -813,12 +813,46 @@ class RelationalDatabase {
       const tx = db.transaction('store', 'readwrite');
       const store = tx.objectStore('store');
       store.delete('db_tables');
+      store.delete('live_session');
       await new Promise((resolve) => {
         tx.oncomplete = () => resolve(true);
         tx.onerror = () => resolve(false);
       });
     } catch (e) {
       console.warn('Error clearing IndexedDB session:', e);
+    }
+  }
+
+  // Save live custom session (dataset + trained benchmark)
+  async saveLiveSession(dataset, benchmark) {
+    try {
+      const db = await this._openDB();
+      const tx = db.transaction('store', 'readwrite');
+      const store = tx.objectStore('store');
+      store.put({ dataset, benchmark }, 'live_session');
+      return new Promise((resolve) => {
+        tx.oncomplete = () => resolve(true);
+        tx.onerror = () => resolve(false);
+      });
+    } catch (e) {
+      console.warn('Error saving live session to IndexedDB:', e);
+      return false;
+    }
+  }
+
+  // Load saved custom session on application startup
+  async loadLiveSession() {
+    try {
+      const db = await this._openDB();
+      return new Promise((resolve) => {
+        const tx = db.transaction('store', 'readonly');
+        const store = tx.objectStore('store');
+        const request = store.get('live_session');
+        request.onsuccess = () => resolve(request.result || null);
+        request.onerror = () => resolve(null);
+      });
+    } catch (e) {
+      return null;
     }
   }
 

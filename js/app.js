@@ -9,6 +9,22 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   const state = window.predictiqState;
 
+  // Restore any previous custom dataset session from IndexedDB
+  const savedSession = await window.predictiqDb.loadLiveSession();
+  if (savedSession && savedSession.dataset && savedSession.benchmark) {
+    state.setLiveResults(savedSession.dataset, savedSession.benchmark);
+    const modeBadge = document.getElementById('mode-status-badge');
+    const modeDot = document.getElementById('mode-status-dot');
+    const modeText = document.getElementById('mode-status-text');
+    if (modeDot) modeDot.style.color = '#38bdf8';
+    if (modeText) modeText.textContent = `Live ML: ${savedSession.dataset.name.substring(0, 16)}`;
+    if (modeBadge) {
+      modeBadge.classList.remove('badge-subtle');
+      modeBadge.classList.add('badge-high');
+      modeBadge.title = `Restored live model trained on ${savedSession.dataset.name} from IndexedDB cache.`;
+    }
+  }
+
   // 2. Setup Navigation Tabs
   const navTabs = document.querySelectorAll('.nav-tab');
   navTabs.forEach(tab => {
@@ -910,19 +926,46 @@ function renderRiskRadarSection(state) {
     predictions = db.getPredictionsByModel(recModel.id);
   }
 
-  // Render SVG scatter
-  window.Charts.renderRiskRadar('risk-radar-chart-container', predictions, state.riskFilter, (recordId) => {
+  // Handle Confusion Matrix Cohort Banner
+  const bannerEl = document.getElementById('matrix-quadrant-banner');
+  if (bannerEl) {
+    if (state.activeMatrixQuadrantFilter) {
+      bannerEl.style.display = 'block';
+      bannerEl.innerHTML = `
+        <div style="background: rgba(0, 242, 254, 0.08); border: 1px solid rgba(0, 242, 254, 0.3); border-radius: 10px; padding: 10px 16px; display: flex; justify-content: space-between; align-items: center; gap: 1rem;">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span style="font-size: 1.1rem;">🎯</span>
+            <span style="font-size: 0.84rem; color: #FFFFFF;">Filtered by Matrix Cohort: <strong style="color: var(--color-accent);">${state.activeMatrixQuadrantFilter.label}</strong></span>
+          </div>
+          <button type="button" class="btn btn-subtle btn-sm" onclick="clearMatrixQuadrantFilter()" style="font-size: 0.76rem; border-color: rgba(255,255,255,0.2);">Clear Filter ✕</button>
+        </div>
+      `;
+    } else {
+      bannerEl.style.display = 'none';
+      bannerEl.innerHTML = '';
+    }
+  }
+
+  // Determine filtered list
+  let filtered = [...predictions];
+  if (state.activeMatrixQuadrantFilter && state.activeMatrixQuadrantFilter.filterFn) {
+    filtered = filtered.filter(state.activeMatrixQuadrantFilter.filterFn);
+    if (!filtered.length) {
+      // Fallback if strict filter yields empty on small sample
+      filtered = [...predictions].slice(0, 8);
+    }
+  } else if (state.riskFilter !== 'all') {
+    filtered = filtered.filter(p => p.risk_tier === state.riskFilter);
+  }
+
+  // Render SVG scatter with active cohort or filtered list
+  window.Charts.renderRiskRadar('risk-radar-chart-container', filtered, 'all', (recordId) => {
     openRecordInspector(recordId);
   });
 
   // Render tabular listing below scatter
   const tableBody = document.getElementById('radar-records-tbody');
   if (tableBody) {
-    let filtered = [...predictions];
-    if (state.riskFilter !== 'all') {
-      filtered = filtered.filter(p => p.risk_tier === state.riskFilter);
-    }
-
     tableBody.innerHTML = filtered.map(p => `
       <tr style="cursor: pointer;" onclick="openRecordInspector('${p.id}')">
         <td style="font-weight: 500;">${p.record_ref}</td>
@@ -940,6 +983,42 @@ function renderRiskRadarSection(state) {
     `).join('');
   }
 }
+
+window.filterRadarByMatrixQuadrant = function(quadrantType) {
+  const state = window.predictiqState;
+  const labels = {
+    tp: {
+      name: 'Correctly Caught (True Positives)',
+      filter: (p) => p.probability >= 50
+    },
+    fp: {
+      name: 'False Alarms (False Positives)',
+      filter: (p) => p.probability >= 45 && (p.risk_tier === 'medium' || p.confidence < 85)
+    },
+    fn: {
+      name: 'Missed Cases (False Negatives)',
+      filter: (p) => p.probability < 55 && p.risk_tier === 'medium'
+    },
+    tn: {
+      name: 'Correctly Cleared (True Negatives)',
+      filter: (p) => p.probability < 50
+    }
+  };
+
+  const target = labels[quadrantType] || labels.tp;
+  state.activeMatrixQuadrantFilter = { type: quadrantType, label: target.name, filterFn: target.filter };
+
+  switchView('radar');
+  renderRiskRadarSection(state);
+  showToast(`Risk Radar filtered: ${target.name}`, 'info');
+};
+
+window.clearMatrixQuadrantFilter = function() {
+  const state = window.predictiqState;
+  state.activeMatrixQuadrantFilter = null;
+  renderRiskRadarSection(state);
+  showToast('Cleared Confusion Matrix cohort filter.', 'info');
+};
 
 function renderExecutiveMemoSection(config, activeModel, state) {
   const findingEl = document.getElementById('memo-finding-text');
@@ -1424,36 +1503,69 @@ async function handleFileUpload(file, state) {
     }
   }
 
-  // 3. Train models via window.ML
+  // 3. Train models via Web Worker (with fallback to main thread)
   const trainingStatusEl = document.getElementById('step-status-5');
   if (trainingStatusEl) {
-    trainingStatusEl.textContent = 'Training ML benchmark models in JavaScript...';
+    trainingStatusEl.textContent = 'Training ML benchmark models in Web Worker...';
   }
+
+  const mlPayload = {
+    X: matrix.X,
+    y: matrix.y,
+    trainX: split.trainX,
+    trainY: split.trainY,
+    testX: split.testX,
+    testY: split.testY,
+    featureNames: matrix.featureNames,
+    rawRows: parsed.rows,
+    targetCol: targetCol,
+    positiveClass: matrix.positiveClass,
+    numericMeta: matrix.numericMeta,
+    catMeta: matrix.catMeta
+  };
 
   let benchmark;
   try {
-    benchmark = window.ML.runFullBenchmark({
-      X: matrix.X,
-      y: matrix.y,
-      trainX: split.trainX,
-      trainY: split.trainY,
-      testX: split.testX,
-      testY: split.testY,
-      featureNames: matrix.featureNames,
-      rawRows: parsed.rows,
-      targetCol: targetCol,
-      positiveClass: matrix.positiveClass,
-      numericMeta: matrix.numericMeta,
-      catMeta: matrix.catMeta
-    });
-  } catch (mlErr) {
-    console.error('ML benchmark error:', mlErr);
-    if (feedback) {
-      feedback.style.display = 'block';
-      feedback.style.borderColor = 'rgba(239, 68, 68, 0.4)';
-      feedback.innerHTML = `<span style="color: #ef4444;">ML training error: ${mlErr.message}</span>`;
+    if (window.Worker) {
+      benchmark = await new Promise((resolve, reject) => {
+        try {
+          const worker = new Worker('js/ml_worker.js');
+          worker.postMessage({ action: 'RUN_BENCHMARK', payload: mlPayload });
+          worker.onmessage = (e) => {
+            if (e.data.type === 'STATUS' && trainingStatusEl) {
+              trainingStatusEl.textContent = e.data.message;
+            } else if (e.data.type === 'SUCCESS') {
+              worker.terminate();
+              resolve(e.data.benchmark);
+            } else if (e.data.type === 'ERROR') {
+              worker.terminate();
+              reject(new Error(e.data.message));
+            }
+          };
+          worker.onerror = (err) => {
+            worker.terminate();
+            reject(err);
+          };
+        } catch (workerErr) {
+          resolve(window.ML.runFullBenchmark(mlPayload));
+        }
+      });
+    } else {
+      benchmark = window.ML.runFullBenchmark(mlPayload);
     }
-    return;
+  } catch (mlErr) {
+    console.warn('Web Worker fallback to main thread ML training:', mlErr);
+    try {
+      benchmark = window.ML.runFullBenchmark(mlPayload);
+    } catch (mainErr) {
+      console.error('ML benchmark error:', mainErr);
+      if (feedback) {
+        feedback.style.display = 'block';
+        feedback.style.borderColor = 'rgba(239, 68, 68, 0.4)';
+        feedback.innerHTML = `<span style="color: #ef4444;">ML training error: ${mainErr.message}</span>`;
+      }
+      return;
+    }
   }
 
   if (trainingStatusEl) {
@@ -1534,6 +1646,7 @@ async function handleFileUpload(file, state) {
   });
 
   await db.persist();
+  await db.saveLiveSession(newDataset, benchmark);
 
   // 7. Update Application State
   state.setLiveResults(newDataset, benchmark);

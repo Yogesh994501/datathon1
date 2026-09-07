@@ -68,16 +68,16 @@ h1, h2, h3, h4, h5, h6 {
   text-transform: none;
 }
 
-h1 { font-size: 2.3rem; letter-spacing: -0.025em; }
-h2 { font-size: 1.6rem; letter-spacing: -0.02em; }
-h3 { font-size: 1.22rem; letter-spacing: -0.015em; }
-h4 { font-size: 1.04rem; }
+h1 { font-size: 2.45rem; letter-spacing: -0.025em; }
+h2 { font-size: 1.8rem; letter-spacing: -0.02em; }
+h3 { font-size: 1.35rem; letter-spacing: -0.015em; }
+h4 { font-size: 1.12rem; }
 
 p, .body-copy {
-  color: var(--color-text-muted);
+  color: #B5BFD0;
   max-width: 72ch;
-  font-size: 0.95rem;
-  line-height: 1.6;
+  font-size: 1.05rem;
+  line-height: 1.65;
 }
 
 /* Headline Figure Serif Accent */
@@ -1128,18 +1128,19 @@ select:focus-visible,
 .quiet-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 0.88rem;
+  font-size: 1rem;
   text-align: left;
   background: transparent;
 }
 
 .quiet-table th {
-  padding: 0.85rem 1.1rem;
+  padding: 0.95rem 1.15rem;
   font-weight: 600;
-  color: var(--color-text-muted);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.065);
-  background: rgba(255, 255, 255, 0.025);
-  font-size: 0.8rem;
+  color: #CBD5E1;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.035);
+  font-size: 0.9rem;
+  letter-spacing: 0.01em;
 }
 
 .quiet-table th:first-child {
@@ -1150,12 +1151,13 @@ select:focus-visible,
 }
 
 .quiet-table td {
-  padding: 0.85rem 1.1rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.055);
-  color: var(--color-text);
+  padding: 0.95rem 1.15rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.065);
+  color: #F8FAFC;
   background: transparent;
   vertical-align: middle;
   transition: background 0.2s ease;
+  font-size: 0.96rem;
 }
 
 .quiet-table tbody tr:hover td {

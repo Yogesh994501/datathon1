@@ -224,21 +224,21 @@
     }
 
     .lever-name {
-      font-size: 13.5px;
-      font-weight: 500;
-      color: #F1F5F9;
+      font-size: 15px;
+      font-weight: 600;
+      color: #F8FAFC;
     }
 
     .lever-value-tag {
-      font-size: 13.5px;
+      font-size: 15.5px;
       font-weight: 700;
       color: #FFFFFF;
       font-family: 'JetBrains Mono', monospace;
     }
 
     .lever-subtext {
-      font-size: 11px;
-      color: var(--text-muted);
+      font-size: 12.5px;
+      color: #94A3B8;
     }
 
     /* Custom Electric Cyan Slider */
@@ -451,8 +451,8 @@
     }
 
     .kpi-title {
-      font-size: 13px;
-      color: var(--text-dimmed);
+      font-size: 14.5px;
+      color: #CBD5E1;
       font-weight: 500;
     }
 
@@ -465,14 +465,14 @@
     }
 
     .kpi-value {
-      font-size: 32px;
+      font-size: 34px;
       font-weight: 700;
       color: #FFFFFF;
       letter-spacing: -0.02em;
     }
 
     .delta-chip {
-      font-size: 12px;
+      font-size: 12.5px;
       font-weight: 600;
       padding: 3px 8px;
       border-radius: 6px;
@@ -495,8 +495,8 @@
     }
 
     .kpi-subtext {
-      font-size: 12px;
-      color: var(--text-muted);
+      font-size: 13px;
+      color: #94A3B8;
       font-weight: 500;
     }
 
@@ -515,7 +515,7 @@
     }
 
     .chart-title {
-      font-size: 15px;
+      font-size: 17px;
       font-weight: 600;
       color: #FFFFFF;
     }
@@ -577,7 +577,7 @@
     }
 
     .shap-title {
-      font-size: 12px;
+      font-size: 13.5px;
       font-weight: 700;
       letter-spacing: 0.08em;
       color: #FFFFFF;
@@ -588,8 +588,8 @@
       display: flex;
       align-items: center;
       gap: 48px;
-      font-size: 11px;
-      color: var(--text-muted);
+      font-size: 12.5px;
+      color: #94A3B8;
       font-weight: 600;
       letter-spacing: 0.04em;
     }
@@ -609,15 +609,15 @@
 
     .shap-row {
       display: grid;
-      grid-template-columns: 140px 100px 1fr 70px;
+      grid-template-columns: 155px 105px 1fr 75px;
       align-items: center;
       gap: 12px;
     }
 
     .shap-feature-name {
-      font-size: 13px;
-      color: #E2E8F0;
-      font-weight: 500;
+      font-size: 14.5px;
+      color: #F8FAFC;
+      font-weight: 600;
     }
 
     .shap-badge {
@@ -1258,6 +1258,48 @@
     // Initial run
     updateSliderFills();
     calculatePredictions();
+
+    // Check if a custom dataset is active in IndexedDB and adapt context
+    async function checkCustomSession() {
+      try {
+        const req = indexedDB.open('predictiq_database_v4', 4);
+        req.onsuccess = (e) => {
+          const db = e.target.result;
+          if (!db.objectStoreNames.contains('store')) return;
+          const tx = db.transaction('store', 'readonly');
+          const store = tx.objectStore('store');
+          const getReq = store.get('live_session');
+          getReq.onsuccess = () => {
+            const session = getReq.result;
+            if (session && session.dataset && session.benchmark) {
+              applyCustomDatasetContext(session);
+            }
+          };
+        };
+      } catch (err) {
+        console.warn('Simulator session check note:', err);
+      }
+    }
+
+    function applyCustomDatasetContext(session) {
+      const headerH1 = document.querySelector('.page-header h1');
+      if (headerH1 && !document.getElementById('sim-dataset-badge')) {
+        const badge = document.createElement('span');
+        badge.id = 'sim-dataset-badge';
+        badge.style.cssText = 'background: rgba(0, 242, 254, 0.12); color: #00F2FE; border: 1px solid rgba(0, 242, 254, 0.35); font-size: 11px; padding: 4px 10px; border-radius: 6px; font-weight: 600; margin-left: 14px; vertical-align: middle; display: inline-flex; align-items: center; gap: 4px;';
+        badge.textContent = `● Custom Dataset: ${session.dataset.name}`;
+        headerH1.appendChild(badge);
+      }
+
+      const feats = session.benchmark.featureImportances || [];
+      if (feats.length >= 2) {
+        const rowNames = document.querySelectorAll('.shap-feature-name');
+        if (rowNames[0]) rowNames[0].textContent = feats[0].feature_name;
+        if (rowNames[1]) rowNames[1].textContent = feats[1].feature_name;
+      }
+    }
+
+    checkCustomSession();
   </script>
 </body>
 </html>

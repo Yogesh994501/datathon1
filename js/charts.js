@@ -348,27 +348,34 @@ const Charts = {
       const tn = hasRealCm ? activeModel.confusionMatrix.tn : 933;
 
       cmEl.innerHTML = `
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; max-width: 340px; margin: 0 auto; text-align: center; font-size: 0.85rem;" role="table" aria-label="Prediction Accuracy Breakdown">
-          <div style="background: rgba(255, 255, 255, 0.035); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.08); padding: 1rem 0.5rem; border-radius: 14px;">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; max-width: 360px; margin: 0 auto; text-align: center; font-size: 0.85rem;" role="table" aria-label="Prediction Accuracy Breakdown">
+          <button type="button" class="cm-quadrant-btn" onclick="window.filterRadarByMatrixQuadrant('tp')" title="Click to view True Positives in Risk Radar" style="background: rgba(255, 255, 255, 0.035); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.08); padding: 0.85rem 0.5rem; border-radius: 12px; cursor: pointer; text-align: center; transition: all 0.2s ease;">
             <div style="color: var(--color-accent); font-size: 0.76rem; font-weight: 600;">Correctly Caught</div>
             <div style="color: var(--color-text-faint); font-size: 0.68rem; margin-bottom: 0.15rem;">True Positives (High Risk)</div>
-            <div class="figure-serif" style="font-size: 1.4rem; color: #EDEAE3; margin-top: 0.2rem;">${tp.toLocaleString()}</div>
-          </div>
-          <div style="background: rgba(255, 255, 255, 0.035); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.08); padding: 1rem 0.5rem; border-radius: 14px;">
-            <div style="color: #C28B36; font-size: 0.76rem; font-weight: 600;">False Alarms</div>
+            <div class="figure-serif" style="font-size: 1.35rem; color: #EDEAE3; margin-top: 0.2rem;">${tp.toLocaleString()}</div>
+            <div style="font-size: 0.65rem; color: var(--color-accent); margin-top: 0.25rem; opacity: 0.8;">Inspect cohort →</div>
+          </button>
+          <button type="button" class="cm-quadrant-btn" onclick="window.filterRadarByMatrixQuadrant('fp')" title="Click to view False Positives (False Alarms) in Risk Radar" style="background: rgba(239, 68, 68, 0.05); backdrop-filter: blur(12px); border: 1px solid rgba(239, 68, 68, 0.2); padding: 0.85rem 0.5rem; border-radius: 12px; cursor: pointer; text-align: center; transition: all 0.2s ease;">
+            <div style="color: #EF4444; font-size: 0.76rem; font-weight: 600;">False Alarms</div>
             <div style="color: var(--color-text-faint); font-size: 0.68rem; margin-bottom: 0.15rem;">False Positives</div>
-            <div class="figure-serif" style="font-size: 1.4rem; color: #C28B36; margin-top: 0.2rem;">${fp.toLocaleString()}</div>
-          </div>
-          <div style="background: rgba(255, 255, 255, 0.035); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.08); padding: 1rem 0.5rem; border-radius: 14px;">
-            <div style="color: #C28B36; font-size: 0.76rem; font-weight: 600;">Missed Cases</div>
+            <div class="figure-serif" style="font-size: 1.35rem; color: #EF4444; margin-top: 0.2rem;">${fp.toLocaleString()}</div>
+            <div style="font-size: 0.65rem; color: #EF4444; margin-top: 0.25rem; opacity: 0.85;">Inspect cohort →</div>
+          </button>
+          <button type="button" class="cm-quadrant-btn" onclick="window.filterRadarByMatrixQuadrant('fn')" title="Click to view False Negatives (Missed Cases) in Risk Radar" style="background: rgba(217, 164, 65, 0.05); backdrop-filter: blur(12px); border: 1px solid rgba(217, 164, 65, 0.2); padding: 0.85rem 0.5rem; border-radius: 12px; cursor: pointer; text-align: center; transition: all 0.2s ease;">
+            <div style="color: #D9A441; font-size: 0.76rem; font-weight: 600;">Missed Cases</div>
             <div style="color: var(--color-text-faint); font-size: 0.68rem; margin-bottom: 0.15rem;">False Negatives</div>
-            <div class="figure-serif" style="font-size: 1.4rem; color: #C28B36; margin-top: 0.2rem;">${fn.toLocaleString()}</div>
-          </div>
-          <div style="background: rgba(255, 255, 255, 0.035); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.08); padding: 1rem 0.5rem; border-radius: 14px;">
-            <div style="color: #6B8F8A; font-size: 0.76rem; font-weight: 600;">Correctly Cleared</div>
+            <div class="figure-serif" style="font-size: 1.35rem; color: #D9A441; margin-top: 0.2rem;">${fn.toLocaleString()}</div>
+            <div style="font-size: 0.65rem; color: #D9A441; margin-top: 0.25rem; opacity: 0.85;">Inspect cohort →</div>
+          </button>
+          <button type="button" class="cm-quadrant-btn" onclick="window.filterRadarByMatrixQuadrant('tn')" title="Click to view True Negatives in Risk Radar" style="background: rgba(16, 185, 129, 0.05); backdrop-filter: blur(12px); border: 1px solid rgba(16, 185, 129, 0.2); padding: 0.85rem 0.5rem; border-radius: 12px; cursor: pointer; text-align: center; transition: all 0.2s ease;">
+            <div style="color: #10B981; font-size: 0.76rem; font-weight: 600;">Correctly Cleared</div>
             <div style="color: var(--color-text-faint); font-size: 0.68rem; margin-bottom: 0.15rem;">True Negatives (Safe)</div>
-            <div class="figure-serif" style="font-size: 1.4rem; color: #EDEAE3; margin-top: 0.2rem;">${tn.toLocaleString()}</div>
-          </div>
+            <div class="figure-serif" style="font-size: 1.35rem; color: #EDEAE3; margin-top: 0.2rem;">${tn.toLocaleString()}</div>
+            <div style="font-size: 0.65rem; color: #10B981; margin-top: 0.25rem; opacity: 0.85;">Inspect cohort →</div>
+          </button>
+        </div>
+        <div style="text-align: center; font-size: 0.72rem; color: var(--color-text-faint); margin-top: 0.5rem;">
+          Tip: Click any quadrant above to drill down and inspect individual accounts in the Risk Radar.
         </div>
       `;
     }

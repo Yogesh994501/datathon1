@@ -475,11 +475,11 @@
             <thead>
               <tr>
                 <th>Algorithm</th>
-                <th>Accuracy (% Correct)</th>
-                <th>Precision (% True Alarms)</th>
-                <th>Recall (% Risks Caught)</th>
-                <th>F1 (Balanced Score)</th>
-                <th>ROC-AUC (Reliability)</th>
+                <th title="Accuracy: % of correct classifications overall on unseen test data.">Accuracy (% Correct) <span style="font-size: 0.75rem; color: var(--color-accent); cursor: help;">ⓘ</span></th>
+                <th title="Precision: Of all accounts flagged as high risk, how many actually had that outcome (avoids false alarms).">Precision (% True Alarms) <span style="font-size: 0.75rem; color: var(--color-accent); cursor: help;">ⓘ</span></th>
+                <th title="Recall: Of all true high risk accounts, what percentage did the AI successfully catch before it happened.">Recall (% Risks Caught) <span style="font-size: 0.75rem; color: var(--color-accent); cursor: help;">ⓘ</span></th>
+                <th title="F1-Score: The harmonic balance between precision and recall. Critical when high-risk cases are uncommon.">F1 (Balanced Score) <span style="font-size: 0.75rem; color: var(--color-accent); cursor: help;">ⓘ</span></th>
+                <th title="ROC-AUC: Overall model reliability score. 90%+ is exceptional, 80-90% is strong, 50% is a random coin flip.">ROC-AUC (Reliability) <span style="font-size: 0.75rem; color: var(--color-accent); cursor: help;">ⓘ</span></th>
                 <th>Trained At</th>
               </tr>
             </thead>
@@ -608,6 +608,9 @@
             <button type="button" class="btn btn-subtle btn-sm radar-filter-btn" data-filter="low">Low risk</button>
           </div>
         </div>
+
+        <!-- Dynamic Confusion Matrix Filter Banner -->
+        <div id="matrix-quadrant-banner" style="display: none; margin-bottom: 1rem;"></div>
 
         <!-- SVG Scatter Plot -->
         <div id="risk-radar-chart-container" class="radar-chart-wrapper" style="min-height: 280px; margin-bottom: 1.5rem;"></div>
