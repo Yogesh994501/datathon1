@@ -155,6 +155,10 @@ document.addEventListener('DOMContentLoaded', async () => {
   // 8. Setup Dataset Ingestion Studio Simulation
   setupDatasetUploadStudio(state);
 
+  // 8b. Setup Hamburger Navigation Drawer & Global Live Search Bar
+  setupHamburgerDrawer();
+  setupGlobalSearch();
+
   // 9. Subscribe to State Changes
   state.subscribe((s) => {
     renderAll(s);
@@ -200,6 +204,315 @@ function setupScrollSpy() {
   });
 
   sections.forEach(sec => observer.observe(sec));
+}
+
+function setupHamburgerDrawer() {
+  const hamburgerBtn = document.getElementById('btn-nav-hamburger');
+  const drawer = document.getElementById('nav-drawer');
+  const overlay = document.getElementById('nav-drawer-overlay');
+  const closeBtn = document.getElementById('btn-close-nav-drawer');
+
+  if (!hamburgerBtn || !drawer || !overlay) return;
+
+  function openDrawer() {
+    hamburgerBtn.classList.add('active');
+    hamburgerBtn.setAttribute('aria-expanded', 'true');
+    drawer.classList.add('active');
+    drawer.setAttribute('aria-hidden', 'false');
+    overlay.classList.add('active');
+    overlay.setAttribute('aria-hidden', 'false');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeDrawer() {
+    hamburgerBtn.classList.remove('active');
+    hamburgerBtn.setAttribute('aria-expanded', 'false');
+    drawer.classList.remove('active');
+    drawer.setAttribute('aria-hidden', 'true');
+    overlay.classList.remove('active');
+    overlay.setAttribute('aria-hidden', 'true');
+    document.body.style.overflow = '';
+  }
+
+  hamburgerBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (drawer.classList.contains('active')) {
+      closeDrawer();
+    } else {
+      openDrawer();
+    }
+  });
+
+  if (closeBtn) {
+    closeBtn.addEventListener('click', closeDrawer);
+  }
+
+  overlay.addEventListener('click', closeDrawer);
+
+  window.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && drawer.classList.contains('active')) {
+      closeDrawer();
+    }
+  });
+
+  // Automatically close drawer when any navigation link inside it is clicked
+  const drawerItems = drawer.querySelectorAll('.nav-drawer-item');
+  drawerItems.forEach(item => {
+    item.addEventListener('click', () => {
+      closeDrawer();
+    });
+  });
+}
+
+function setupGlobalSearch() {
+  const searchInput = document.getElementById('global-search-input');
+  const searchDropdown = document.getElementById('search-results-dropdown');
+  const searchClear = document.getElementById('btn-search-clear');
+  const searchContainer = document.getElementById('global-search-container');
+
+  if (!searchInput || !searchDropdown) return;
+
+  // 1. Keyboard shortcut '/' to focus search
+  window.addEventListener('keydown', (e) => {
+    if (e.key === '/' && !['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement?.tagName)) {
+      e.preventDefault();
+      searchInput.focus();
+      searchInput.select();
+    }
+    if (e.key === 'Escape' && searchDropdown.classList.contains('active')) {
+      searchDropdown.classList.remove('active');
+      searchInput.blur();
+    }
+  });
+
+  // 2. Clear button
+  if (searchClear) {
+    searchClear.addEventListener('click', () => {
+      searchInput.value = '';
+      searchClear.style.display = 'none';
+      searchDropdown.classList.remove('active');
+      searchInput.focus();
+    });
+  }
+
+  // 3. Close dropdown when clicking outside
+  document.addEventListener('click', (e) => {
+    if (searchContainer && !searchContainer.contains(e.target)) {
+      searchDropdown.classList.remove('active');
+    }
+  });
+
+  searchInput.addEventListener('focus', () => {
+    if (searchInput.value.trim().length > 0) {
+      searchDropdown.classList.add('active');
+    }
+  });
+
+  // 4. Search input event
+  searchInput.addEventListener('input', () => {
+    const rawVal = searchInput.value;
+    const query = rawVal.trim().toLowerCase();
+
+    if (searchClear) {
+      searchClear.style.display = rawVal.length > 0 ? 'inline-block' : 'none';
+    }
+
+    if (!query) {
+      searchDropdown.classList.remove('active');
+      searchDropdown.innerHTML = '';
+      return;
+    }
+
+    renderSearchResults(query);
+  });
+
+  function renderSearchResults(query) {
+    const sections = [
+      { id: 'overview', title: 'Executive Briefing', desc: 'High-level summary, key stats, and 90-day AI forecast memo', icon: '📊' },
+      { id: 'dataset', title: 'Dataset Studio', desc: 'Upload spreadsheets (CSV/XLSX/JSON), check data health & clean-up', icon: '📁' },
+      { id: 'models', title: 'Compare AI Models', desc: 'Algorithm benchmarks, Accuracy, Recall, ROC-AUC, and Confusion Matrix', icon: '⚡' },
+      { id: 'predictions', title: 'Prediction Center', desc: 'Customer & account risk scores, plain-language summaries & drivers', icon: '🎯' },
+      { id: 'radar', title: 'Risk Radar', desc: 'Visual accounts risk scatter map, high/medium/low filterable list', icon: '📡' },
+      { id: 'simulator', title: 'What-If Simulator', desc: 'Scenario planner — adjust operational sliders to observe live impact', icon: '🎛️' },
+      { id: 'reports', title: 'Reports & Downloads', desc: 'Export prediction spreadsheets (CSV/JSON) and print executive memo', icon: '📑' },
+    ];
+
+    const models = [
+      { name: 'Logistic Regression', desc: 'Recommended: 83.9% AUC with L2 regularization', target: 'models' },
+      { name: 'Decision Tree', desc: 'Interpretable decision splits based on key account rules', target: 'models' },
+      { name: 'Naive Bayes', desc: 'Fast probabilistic baseline for quick validation', target: 'models' },
+      { name: 'Soft-Voting Ensemble', desc: 'Weighted combination combining model strengths', target: 'models' },
+      { name: 'XGBoost Benchmark', desc: 'Gradient boosted trees benchmark reference', target: 'models' }
+    ];
+
+    const metrics = [
+      { name: 'Prediction Accuracy', desc: '% of correct decisions made across holdout test data', target: 'models' },
+      { name: 'Reliability Score (ROC-AUC)', desc: 'Measures how well AI separates high-risk from low-risk', target: 'models' },
+      { name: 'Revenue at Risk', desc: 'Total financial exposure from accounts projected to churn', target: 'overview' },
+      { name: 'Unusual Numbers (Outliers)', desc: 'Tukey IQR fence detected 73 statistical distribution outliers', target: 'dataset' },
+      { name: 'Data Clean-up Pipeline', desc: 'Missing value imputation, deduplication, and scaling checklist', target: 'dataset' },
+      { name: 'Prediction Breakdown (Confusion Matrix)', desc: 'True positives, false alarms, and missed cases', target: 'models' }
+    ];
+
+    // Filter sections
+    const matchingSections = sections.filter(s =>
+      s.title.toLowerCase().includes(query) || s.desc.toLowerCase().includes(query)
+    );
+
+    // Filter models
+    const matchingModels = models.filter(m =>
+      m.name.toLowerCase().includes(query) || m.desc.toLowerCase().includes(query)
+    );
+
+    // Filter metrics
+    const matchingMetrics = metrics.filter(m =>
+      m.name.toLowerCase().includes(query) || m.desc.toLowerCase().includes(query)
+    );
+
+    // Query active records from SQLite database if available
+    let matchingRecords = [];
+    try {
+      if (window.predictiqDb && window.predictiqDb.db) {
+        const dbRes = window.predictiqDb.query(`
+          SELECT id, record_ref, outcome_label, probability, confidence 
+          FROM predictions 
+          WHERE record_ref LIKE ? OR outcome_label LIKE ? 
+          LIMIT 5
+        `, [`%${query}%`, `%${query}%`]);
+        if (dbRes && dbRes.length > 0) {
+          matchingRecords = dbRes;
+        }
+      }
+    } catch (e) {
+      // ignore
+    }
+
+    if (matchingSections.length === 0 && matchingModels.length === 0 && matchingMetrics.length === 0 && matchingRecords.length === 0) {
+      searchDropdown.innerHTML = `
+        <div class="search-no-results">
+          No matching sections, accounts, or models found for "<strong>${escapeHtml(query)}</strong>".
+        </div>
+      `;
+      searchDropdown.classList.add('active');
+      return;
+    }
+
+    let html = '';
+
+    if (matchingSections.length > 0) {
+      html += `<div class="search-category-group">
+        <div class="search-category-title">Workspace Sections</div>`;
+      matchingSections.forEach(s => {
+        html += `
+          <div class="search-result-item" data-action="view" data-target="${s.id}">
+            <div class="search-item-info">
+              <span class="search-item-title">${s.icon} ${s.title}</span>
+              <span class="search-item-desc">${s.desc}</span>
+            </div>
+            <span class="search-item-badge">Jump</span>
+          </div>
+        `;
+      });
+      html += `</div>`;
+    }
+
+    if (matchingRecords.length > 0) {
+      html += `<div class="search-category-group">
+        <div class="search-category-title">Customer / Account Records</div>`;
+      matchingRecords.forEach(r => {
+        const probVal = r.probability > 1 ? r.probability.toFixed(1) : (r.probability * 100).toFixed(1);
+        const confVal = r.confidence > 1 ? r.confidence.toFixed(0) : (r.confidence * 100).toFixed(0);
+        html += `
+          <div class="search-result-item" data-action="record" data-ref="${r.record_ref || r.id}">
+            <div class="search-item-info">
+              <span class="search-item-title">${r.record_ref}</span>
+              <span class="search-item-desc">${r.outcome_label || 'Evaluated'} • ${probVal}% Risk • ${confVal}% Conf</span>
+            </div>
+            <span class="search-item-badge" style="color: var(--color-accent);">${r.outcome_label || 'Inspect'}</span>
+          </div>
+        `;
+      });
+      html += `</div>`;
+    }
+
+    if (matchingModels.length > 0) {
+      html += `<div class="search-category-group">
+        <div class="search-category-title">AI Models & Algorithms</div>`;
+      matchingModels.forEach(m => {
+        html += `
+          <div class="search-result-item" data-action="model" data-target="${m.target}">
+            <div class="search-item-info">
+              <span class="search-item-title">⚡ ${m.name}</span>
+              <span class="search-item-desc">${m.desc}</span>
+            </div>
+            <span class="search-item-badge">AI Model</span>
+          </div>
+        `;
+      });
+      html += `</div>`;
+    }
+
+    if (matchingMetrics.length > 0) {
+      html += `<div class="search-category-group">
+        <div class="search-category-title">Insights & Metrics</div>`;
+      matchingMetrics.forEach(m => {
+        html += `
+          <div class="search-result-item" data-action="view" data-target="${m.target}">
+            <div class="search-item-info">
+              <span class="search-item-title">📈 ${m.name}</span>
+              <span class="search-item-desc">${m.desc}</span>
+            </div>
+            <span class="search-item-badge">Metric</span>
+          </div>
+        `;
+      });
+      html += `</div>`;
+    }
+
+    searchDropdown.innerHTML = html;
+    searchDropdown.classList.add('active');
+
+    // Bind click events on results
+    searchDropdown.querySelectorAll('.search-result-item').forEach(item => {
+      item.addEventListener('click', () => {
+        const action = item.getAttribute('data-action');
+        const target = item.getAttribute('data-target');
+        const ref = item.getAttribute('data-ref');
+
+        searchDropdown.classList.remove('active');
+        searchInput.value = '';
+        if (searchClear) searchClear.style.display = 'none';
+
+        if (action === 'view') {
+          switchView(target);
+        } else if (action === 'model') {
+          switchView('models');
+          const advDrawer = document.getElementById('adv-model-drawer');
+          const advToggleBtn = document.getElementById('btn-toggle-adv-model');
+          if (advDrawer) {
+            advDrawer.style.display = 'block';
+            if (advToggleBtn) advToggleBtn.textContent = 'Hide Model Accuracy Curve & Error Breakdown';
+            window.Charts.renderAdvancedModelCharts('roc-chart-container', 'cm-chart-container', window.predictiqState.currentActiveModel || null);
+          }
+        } else if (action === 'record') {
+          switchView('radar');
+          if (window.openRecordInspector) {
+            window.openRecordInspector(ref);
+          }
+        }
+      });
+    });
+  }
+
+  function escapeHtml(str) {
+    return str.replace(/[&<>'"]/g, tag => ({
+      '&': '&amp;',
+      '<': '&lt;',
+      '>': '&gt;',
+      "'": '&#39;',
+      '"': '&quot;'
+    }[tag] || tag));
+  }
 }
 
 function switchView(viewName) {
@@ -601,16 +914,16 @@ window.showToast = showToast;
 function openRecordInspector(recordId) {
   const db = window.predictiqDb;
   let rec = null;
-  const predictions = db.query(`SELECT * FROM predictions WHERE id = '${recordId}' LIMIT 1`);
+  const predictions = db.query(`SELECT * FROM predictions WHERE id = '${recordId}' OR record_ref = '${recordId}' LIMIT 1`);
   if (predictions.length) {
     rec = predictions[0];
   } else if (window.predictiqState && window.predictiqState.liveBenchmark && window.predictiqState.liveBenchmark.predictions) {
-    rec = window.predictiqState.liveBenchmark.predictions.find(p => p.id === recordId);
+    rec = window.predictiqState.liveBenchmark.predictions.find(p => p.id === recordId || p.record_ref === recordId);
   }
   if (!rec) return;
-  const recommendation = db.getRecommendationForPrediction(recordId);
-  const actionPlan = db.getActionPlanForPrediction ? db.getActionPlanForPrediction(recordId) : null;
-  const jsonPayload = window.Reports ? window.Reports.getRecordJSONPayload(recordId) : null;
+  const recommendation = db.getRecommendationForPrediction(rec.id);
+  const actionPlan = db.getActionPlanForPrediction ? db.getActionPlanForPrediction(rec.id) : null;
+  const jsonPayload = window.Reports ? window.Reports.getRecordJSONPayload(rec.id) : null;
   const jsonStr = jsonPayload ? JSON.stringify(jsonPayload, null, 2) : JSON.stringify(rec, null, 2);
 
   const drawer = document.getElementById('inspector-drawer-panel');
@@ -622,7 +935,7 @@ function openRecordInspector(recordId) {
   drawer.innerHTML = `
     <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.5rem; border-bottom: var(--border-hairline); padding-bottom: 1rem;">
       <div>
-        <div style="font-size: 0.8rem; color: var(--color-text-muted);">Record details</div>
+        <div style="font-size: 0.8rem; color: var(--color-text-muted);">Account details</div>
         <h2 style="font-size: 1.4rem; margin-top: 0.2rem;">${rec.record_ref}</h2>
       </div>
       <button type="button" class="btn btn-subtle btn-sm" id="btn-close-drawer" aria-label="Close record details dialog">Close</button>
@@ -630,26 +943,26 @@ function openRecordInspector(recordId) {
 
     <!-- Outcome metric -->
     <div style="margin-bottom: 1.5rem;">
-      <div style="font-size: 0.8rem; color: var(--color-text-muted);">Assessed outcome</div>
+      <div style="font-size: 0.8rem; color: var(--color-text-muted);">Risk Probability</div>
       <div class="figure-serif figure-card" style="color: ${rec.risk_tier === 'high' ? 'var(--color-accent)' : 'var(--color-text)'}; margin: 0.35rem 0;">
         ${rec.probability}%
       </div>
       <span class="badge ${rec.risk_tier === 'high' ? 'badge-high' : (rec.risk_tier === 'medium' ? 'badge-medium' : 'badge-low')}">
-        ${rec.outcome_label} • ${rec.confidence}% confidence (boundary distance heuristic)
+        ${rec.outcome_label} • ${rec.confidence}% confidence
       </span>
     </div>
 
-    <!-- Prescribed action memo -->
+    <!-- Recommended action memo -->
     <div class="memo-card" style="margin-bottom: 1.5rem;">
-      <h4 style="margin-bottom: 0.5rem;">Prescribed action memo</h4>
+      <h4 style="margin-bottom: 0.5rem;">Recommended Action Plan</h4>
       <p class="body-copy" style="font-size: 0.88rem; line-height: 1.5; color: var(--color-text);">
         ${recommendation ? recommendation.summary_text : 'Continue standard monitoring protocol; re-evaluate at next checkpoint.'}
       </p>
       ${recommendation ? `
         <div style="margin-top: 1rem; padding-top: 0.75rem; border-top: var(--border-hairline);">
-          <span style="font-size: 0.78rem; color: var(--color-text-muted);">Illustrative exposure protected: </span>
+          <span style="font-size: 0.78rem; color: var(--color-text-muted);">Potential Revenue Saved: </span>
           <span class="figure-serif" style="font-size: 1.1rem; color: var(--color-accent);">$${recommendation.potential_impact.toLocaleString()}</span>
-          <div style="font-size: 0.72rem; color: var(--color-text-faint); margin-top: 0.2rem;">Model scenario projection</div>
+          <div style="font-size: 0.72rem; color: var(--color-text-faint); margin-top: 0.2rem;">AI projection based on current account trends</div>
         </div>
       ` : ''}
     </div>
@@ -974,12 +1287,12 @@ async function handleFileUpload(file, state) {
   prepContainer.style.display = 'block';
 
   const steps = [
-    { title: 'Detecting missing values and estimating imputation bounds', detail: 'Scanning column nulls...' },
-    { title: 'Identifying duplicate identifiers and canonical records', detail: 'Hash set verification...' },
-    { title: 'Isolating statistical distribution outliers', detail: '1.5 × IQR Tukey fence sweep...' },
-    { title: 'Encoding categorical ordinal and nominal variables', detail: 'Binary one-hot matrix...' },
-    { title: 'Scaling continuous numerical features', detail: 'Min-max unit interval normalization...' },
-    { title: 'Partitioning stratified training & holdout validation sets', detail: '80/20 train/test holdout...' }
+    { title: 'Checking for blank / missing info and auto-filling values', detail: 'Scanning for blank values...' },
+    { title: 'Finding and removing duplicate records', detail: 'Checking for duplicate entries...' },
+    { title: 'Flagging unusual numbers and extreme values (outliers)', detail: 'Detecting unusual numbers...' },
+    { title: 'Converting text categories into numbers for AI', detail: 'Encoding text categories...' },
+    { title: 'Balancing number scales for fair comparison', detail: 'Normalizing numbers evenly...' },
+    { title: 'Splitting data into 80% for learning and 20% for testing real accuracy', detail: '80/20 train/test split...' }
   ];
 
   prepChecklist.innerHTML = steps.map((s, idx) => `
@@ -1013,12 +1326,12 @@ async function handleFileUpload(file, state) {
   const split = window.ML.splitTrainTest(matrix.X, matrix.y, 0.2);
 
   // Update step labels with real stats
-  steps[0].detail = `${quality.missing_pct}% missing (${quality.total_missing ? quality.total_missing.toLocaleString() : 0} nulls imputed)`;
+  steps[0].detail = `${quality.missing_pct}% missing (${quality.total_missing ? quality.total_missing.toLocaleString() : 0} blanks filled)`;
   steps[1].detail = `${quality.duplicate_count.toLocaleString()} duplicate rows detected`;
-  steps[2].detail = `${quality.outlier_count.toLocaleString()} outliers isolated (Tukey IQR)`;
-  steps[3].detail = `${matrix.featureNames.length} numerical inputs encoded (target: ${targetCol})`;
-  steps[4].detail = `Standardized / Min-Max scaled across ${matrix.featureNames.length} features`;
-  steps[5].detail = `Train: ${split.trainX.length} rows, Test: ${split.testX.length} rows (stratified)`;
+  steps[2].detail = `${quality.outlier_count.toLocaleString()} unusual numbers detected`;
+  steps[3].detail = `${matrix.featureNames.length} features prepared (Target outcome: ${targetCol})`;
+  steps[4].detail = `Scaled evenly across ${matrix.featureNames.length} features`;
+  steps[5].detail = `Learning: ${split.trainX.length.toLocaleString()} rows, Testing: ${split.testX.length.toLocaleString()} rows`;
 
   // Animate checklist steps
   for (let i = 0; i < steps.length; i++) {

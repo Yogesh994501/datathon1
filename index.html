@@ -6,10 +6,10 @@
   <title>PredictIQ — AI Predictive Insight Dashboard</title>
   <meta name="description" content="PredictIQ: A sober, executive AI Decision Intelligence platform turning historical data into explainable forecasts and actions.">
   
-  <!-- Fonts: Newsreader (High contrast serif for headline figures) & Plus Jakarta Sans (Grotesk sans for UI) with system fallbacks -->
+  <!-- Fonts: Outfit (modern geometric headings), Plus Jakarta Sans (refined UI), Inter, and Newsreader -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&family=Outfit:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 
   <link rel="stylesheet" href="css/tokens.css">
   <link rel="stylesheet" href="css/main.css">
@@ -23,9 +23,16 @@
   <header class="app-header" role="banner">
     <div class="header-inner">
       <div class="brand-group">
+        <!-- Hamburger Menu Toggle Button -->
+        <button type="button" class="btn-hamburger" id="btn-nav-hamburger" aria-label="Open Navigation Menu" aria-expanded="false" title="Open Navigation Menu (Sections)">
+          <span class="hamburger-line"></span>
+          <span class="hamburger-line"></span>
+          <span class="hamburger-line"></span>
+        </button>
+
         <a href="#" class="brand-title" onclick="switchView('overview'); return false;">
           <span>PredictIQ</span>
-          <span class="brand-subtitle">Executive Decision Intelligence</span>
+          <span class="brand-subtitle">AI Decision Intelligence</span>
         </a>
 
         <!-- Domain Selector Switcher -->
@@ -37,16 +44,19 @@
         </div>
       </div>
 
-      <!-- Navigation Tabs -->
-      <nav class="nav-tabs" role="navigation" aria-label="Workspace modules">
-        <button type="button" class="nav-tab active" data-view="overview">Executive Briefing</button>
-        <button type="button" class="nav-tab" data-view="dataset">Dataset Studio</button>
-        <button type="button" class="nav-tab" data-view="models">Model Benchmark</button>
-        <button type="button" class="nav-tab" data-view="predictions">Prediction Center</button>
-        <button type="button" class="nav-tab" data-view="radar">Risk Radar</button>
-        <button type="button" class="nav-tab" data-view="simulator">What-If Simulator</button>
-        <button type="button" class="nav-tab" data-view="reports">Reports</button>
-      </nav>
+      <!-- Real-Time Global Search Bar -->
+      <div class="header-search-container" id="global-search-container">
+        <div class="header-search-wrapper">
+          <svg class="header-search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          </svg>
+          <input type="search" id="global-search-input" class="header-search-input" placeholder="Search sections, accounts, models, or metrics... (Press /)" autocomplete="off" aria-label="Search dashboard" />
+          <button type="button" id="btn-search-clear" class="header-search-clear" aria-label="Clear search" title="Clear">✕</button>
+          <kbd class="search-kbd-shortcut" title="Press forward slash to search">/</kbd>
+        </div>
+        <div class="search-results-dropdown" id="search-results-dropdown" role="listbox" aria-label="Search suggestions"></div>
+      </div>
 
       <!-- Database & Mode Indicator -->
       <div style="display: flex; align-items: center; gap: 0.65rem;">
@@ -63,6 +73,78 @@
     </div>
   </header>
 
+  <!-- Hamburger Navigation Drawer Overlay & Panel -->
+  <div class="nav-drawer-overlay" id="nav-drawer-overlay" aria-hidden="true"></div>
+  <aside class="nav-drawer" id="nav-drawer" role="dialog" aria-modal="true" aria-label="Navigation Menu" aria-hidden="true">
+    <div class="nav-drawer-header">
+      <div class="nav-drawer-title-group">
+        <span class="nav-drawer-subheading">PredictIQ Workspace</span>
+        <span class="nav-drawer-heading">Navigation Menu</span>
+      </div>
+      <button type="button" class="nav-drawer-close" id="btn-close-nav-drawer" aria-label="Close Navigation Menu">✕</button>
+    </div>
+    <nav class="nav-drawer-nav" role="navigation" aria-label="Workspace Modules">
+      <button type="button" class="nav-tab nav-drawer-item active" data-view="overview">
+        <span class="nav-drawer-item-icon">📊</span>
+        <div class="nav-drawer-item-content">
+          <span class="nav-drawer-item-title">Executive Briefing</span>
+          <span class="nav-drawer-item-desc">High-level summary, KPI scores, and AI forecast memo</span>
+        </div>
+      </button>
+      <button type="button" class="nav-tab nav-drawer-item" data-view="dataset">
+        <span class="nav-drawer-item-icon">📁</span>
+        <div class="nav-drawer-item-content">
+          <span class="nav-drawer-item-title">Dataset Studio</span>
+          <span class="nav-drawer-item-desc">Upload data files, inspect quality, and review clean-up</span>
+        </div>
+      </button>
+      <button type="button" class="nav-tab nav-drawer-item" data-view="models">
+        <span class="nav-drawer-item-icon">⚡</span>
+        <div class="nav-drawer-item-content">
+          <span class="nav-drawer-item-title">Model Benchmark</span>
+          <span class="nav-drawer-item-desc">Compare AI algorithms (Accuracy, Precision, Recall, AUC)</span>
+        </div>
+      </button>
+      <button type="button" class="nav-tab nav-drawer-item" data-view="predictions">
+        <span class="nav-drawer-item-icon">🎯</span>
+        <div class="nav-drawer-item-content">
+          <span class="nav-drawer-item-title">Prediction Center</span>
+          <span class="nav-drawer-item-desc">Individual account forecasts & key reason explanations</span>
+        </div>
+      </button>
+      <button type="button" class="nav-tab nav-drawer-item" data-view="radar">
+        <span class="nav-drawer-item-icon">📡</span>
+        <div class="nav-drawer-item-content">
+          <span class="nav-drawer-item-title">Risk Radar</span>
+          <span class="nav-drawer-item-desc">Visual risk scatter map & filterable accounts table</span>
+        </div>
+      </button>
+      <button type="button" class="nav-tab nav-drawer-item" data-view="simulator">
+        <span class="nav-drawer-item-icon">🎛️</span>
+        <div class="nav-drawer-item-content">
+          <span class="nav-drawer-item-title">What-If Simulator</span>
+          <span class="nav-drawer-item-desc">Scenario planner — adjust operational sliders in real time</span>
+        </div>
+      </button>
+      <button type="button" class="nav-tab nav-drawer-item" data-view="reports">
+        <span class="nav-drawer-item-icon">📑</span>
+        <div class="nav-drawer-item-content">
+          <span class="nav-drawer-item-title">Reports</span>
+          <span class="nav-drawer-item-desc">Download prediction spreadsheets (CSV/JSON) & print memos</span>
+        </div>
+      </button>
+    </nav>
+    <div class="nav-drawer-footer">
+      <div style="display: flex; align-items: center; justify-content: space-between;">
+        <span style="color: var(--color-text-muted);">Active Mode:</span>
+        <span style="color: var(--color-accent); font-weight: 600;" id="drawer-mode-indicator">Demo Benchmark</span>
+      </div>
+      <div style="font-size: 0.72rem; line-height: 1.4; color: var(--color-text-faint);">
+        Tip: Press <kbd style="font-family: var(--font-mono); background: rgba(255,255,255,0.08); padding: 1px 4px; border-radius: 4px;">/</kbd> anywhere to quickly search records, models, or sections.
+      </div>
+    </div>
+  </aside>
+
   <!-- Main Workspace -->
   <main class="main-wrapper" id="main-content" role="main">
 
@@ -78,31 +160,31 @@
           Turn historical data into tomorrow's decisions.
         </h1>
         <p class="body-copy" id="briefing-domain-desc">
-          Forecast model calibrated for customer churn propensity. An AI-powered decision intelligence platform that transforms raw datasets into explainable, actionable forecasts.
+          AI predictions calibrated for customer retention. Transforms historical data into simple, actionable business forecasts.
         </p>
       </div>
 
       <!-- Quiet Stat Row with Hairline Dividers (Populated from SQLite) -->
       <div class="stat-bar" role="region" aria-label="Key model metrics">
         <div class="stat-cell">
-          <div class="stat-label">Model accuracy</div>
+          <div class="stat-label">Prediction accuracy</div>
           <div class="figure-serif figure-card" id="stat-model-acc">94.7%</div>
-          <div class="stat-subtext">Last calibrated run</div>
+          <div class="stat-subtext">How often AI is correct</div>
         </div>
         <div class="stat-cell">
-          <div class="stat-label">Records evaluated</div>
+          <div class="stat-label">Accounts analyzed</div>
           <div class="figure-serif figure-card" id="stat-records-evaluated">84,291</div>
-          <div class="stat-subtext">In-database cohort</div>
+          <div class="stat-subtext">Active database records</div>
         </div>
         <div class="stat-cell">
-          <div class="stat-label">ROC-AUC score</div>
+          <div class="stat-label">Reliability score (ROC-AUC)</div>
           <div class="figure-serif figure-card figure-accent" id="stat-avg-confidence">97.4%</div>
-          <div class="stat-subtext">XGBoost discriminator</div>
+          <div class="stat-subtext">Higher score = reliable predictions</div>
         </div>
         <div class="stat-cell">
           <div class="stat-label" id="stat-financial-label">Revenue at Risk</div>
           <div class="figure-serif figure-card" id="stat-financial-exposure">$840,000</div>
-          <div class="stat-subtext">Actionable intervention pool</div>
+          <div class="stat-subtext">Accounts you can reach out to save</div>
         </div>
       </div>
 
@@ -110,10 +192,10 @@
       <div class="pipeline-container" id="pipeline-section" role="region" aria-label="AI Decision Pipeline">
         <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 1rem;">
           <div>
-            <h3>The Decision Intelligence Pipeline</h3>
-            <p class="body-copy" style="font-size: 0.82rem; margin-top: 0.2rem;">From uncurated records to timely organizational action.</p>
+            <h3>How PredictIQ Works (5 Easy Steps)</h3>
+            <p class="body-copy" style="font-size: 0.82rem; margin-top: 0.2rem;">From raw records to practical business action.</p>
           </div>
-          <div style="font-size: 0.75rem; color: var(--color-text-faint);">Click any stage to inspect</div>
+          <div style="font-size: 0.75rem; color: var(--color-text-faint);">Click any step to jump to it</div>
         </div>
 
         <!-- Hairline Connector SVG with One-Time Draw -->
@@ -125,33 +207,33 @@
         <div class="pipeline-steps-grid">
           <!-- Step 1 -->
           <div class="pipeline-step" data-target-view="dataset" style="cursor: pointer;" tabindex="0">
-            <div class="step-seq">1. Raw Data</div>
-            <div class="step-title">Ingestion Studio</div>
-            <div class="step-desc">Historical data records with missing values and outliers ingested into SQLite.</div>
+            <div class="step-seq">Step 1</div>
+            <div class="step-title">Upload Data</div>
+            <div class="step-desc">Load spreadsheets or customer files into the in-browser database.</div>
           </div>
           <!-- Step 2 -->
           <div class="pipeline-step" data-target-view="dataset" style="cursor: pointer;" tabindex="0">
-            <div class="step-seq">2. Data Cleaning</div>
-            <div class="step-title">Automated Prep</div>
-            <div class="step-desc">Imputation, deduplication, feature scaling, and categorical encoding.</div>
+            <div class="step-seq">Step 2</div>
+            <div class="step-title">Smart Clean-up</div>
+            <div class="step-desc">Auto-fills blank entries, removes duplicate rows, and standardizes numbers.</div>
           </div>
           <!-- Step 3 -->
           <div class="pipeline-step" data-target-view="models" style="cursor: pointer;" tabindex="0">
-            <div class="step-seq">3. Model Training</div>
-            <div class="step-title">Benchmark Lab</div>
-            <div class="step-desc">Comparative evaluation across XGBoost, Random Forest, and Neural Networks.</div>
+            <div class="step-seq">Step 3</div>
+            <div class="step-title">Compare AI Models</div>
+            <div class="step-desc">Tests multiple algorithms side-by-side to pick the highest accuracy.</div>
           </div>
           <!-- Step 4 -->
           <div class="pipeline-step" data-target-view="predictions" style="cursor: pointer;" tabindex="0">
-            <div class="step-seq">4. Prediction</div>
-            <div class="step-title">Outcome & Probability</div>
-            <div class="step-desc">Calibrated probability distributions and model confidence scoring.</div>
+            <div class="step-seq">Step 4</div>
+            <div class="step-title">Risk Scores</div>
+            <div class="step-desc">Calculates likelihood and confidence for every account or customer.</div>
           </div>
           <!-- Step 5 -->
           <div class="pipeline-step active" data-target-view="reports" style="cursor: pointer;" tabindex="0">
-            <div class="step-seq">5. Decision</div>
-            <div class="step-title">Executive Action</div>
-            <div class="step-desc">Specific organizational recommendations and revenue protection targets.</div>
+            <div class="step-seq">Step 5</div>
+            <div class="step-title">Action Plan</div>
+            <div class="step-desc">Clear steps to protect revenue, prevent churn, and retain customers.</div>
           </div>
         </div>
       </div>
@@ -163,10 +245,10 @@
         <div class="panel">
           <div class="panel-header">
             <div>
-              <h3 class="panel-title">Cohort trajectory forecast</h3>
-              <div class="panel-desc">Historical observations mapped against the 90-day AI predictive horizon.</div>
+              <h3 class="panel-title">90-Day Trend Forecast</h3>
+              <div class="panel-desc">Past historical trends mapped against the 90-day AI predicted outlook.</div>
             </div>
-            <span class="badge badge-subtle">Updated from SQLite</span>
+            <span class="badge badge-subtle">Live from SQLite</span>
           </div>
           <div id="trend-chart-container" style="min-height: 240px;"></div>
         </div>
@@ -175,8 +257,8 @@
         <div class="panel">
           <div class="panel-header">
             <div>
-              <h3 class="panel-title">Executive insight memo</h3>
-              <div class="panel-desc">Synthesized model conclusions for decision makers.</div>
+              <h3 class="panel-title">Executive Summary Memo</h3>
+              <div class="panel-desc">Key takeaways & recommendations summarized by AI.</div>
             </div>
             <span class="badge badge-high">High priority</span>
           </div>
@@ -189,14 +271,14 @@
           </div>
 
           <div style="margin-top: 1.25rem;">
-            <div style="font-size: 0.8rem; color: var(--color-text-muted); font-weight: 500; margin-bottom: 0.35rem;">Prescribed organizational action</div>
+            <div style="font-size: 0.8rem; color: var(--color-text-muted); font-weight: 500; margin-bottom: 0.35rem;">Recommended action plan</div>
             <p class="body-copy" id="memo-action-text" style="color: var(--color-text); font-size: 0.9rem; line-height: 1.5;">
               Deploy high-priority retention incentive and assign dedicated account director before next billing cycle.
             </p>
           </div>
 
           <div style="margin-top: 1.5rem; padding-top: 1rem; border-top: var(--border-hairline); display: flex; justify-content: space-between; align-items: baseline;">
-            <span style="font-size: 0.8rem; color: var(--color-text-muted);">Potential exposure protected</span>
+            <span style="font-size: 0.8rem; color: var(--color-text-muted);">Potential revenue protected</span>
             <span class="figure-serif figure-card" id="memo-impact-display" style="color: var(--color-accent); font-size: 1.8rem;">$840,000</span>
           </div>
         </div>
@@ -209,19 +291,19 @@
     <!-- VIEW 2: DATASET STUDIO -->
     <section id="view-dataset" class="view-section">
       <div style="margin-bottom: 1.5rem;">
-        <h2>Dataset Ingestion & Preparation Studio</h2>
-        <p class="body-copy">Ingest raw transactional records, inspect health metrics, and review automated preprocessing pipelines.</p>
+        <h2>Dataset Studio: Upload & Inspect Data</h2>
+        <p class="body-copy">Upload your spreadsheet or records, check data health, and review automatic data preparation.</p>
       </div>
 
       <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem;">
         <!-- Upload Zone -->
         <div class="panel">
-          <h3 class="panel-title" style="margin-bottom: 0.5rem;">Ingest new dataset</h3>
-          <p class="body-copy" style="font-size: 0.85rem; margin-bottom: 1rem;">Supports CSV, XLSX, and JSON formats. Data is stored directly into the in-browser SQLite database.</p>
+          <h3 class="panel-title" style="margin-bottom: 0.5rem;">Upload new dataset</h3>
+          <p class="body-copy" style="font-size: 0.85rem; margin-bottom: 1rem;">Supports CSV, XLSX, and JSON files. Data stays private and processes directly inside your browser.</p>
           
           <div id="dataset-drop-zone" style="border: 2px dashed var(--color-line); padding: 2.5rem 1.5rem; text-align: center; border-radius: var(--radius-sm); cursor: pointer; transition: border-color 0.15s ease;">
-            <div style="color: var(--color-text); font-weight: 500; margin-bottom: 0.35rem;">Drop dataset file here</div>
-            <div style="font-size: 0.8rem; color: var(--color-text-muted); margin-bottom: 1rem;">or browse from local drive</div>
+            <div style="color: var(--color-text); font-weight: 500; margin-bottom: 0.35rem;">Drop your file here</div>
+            <div style="font-size: 0.8rem; color: var(--color-text-muted); margin-bottom: 1rem;">or click to browse from your computer</div>
             <button type="button" class="btn btn-subtle" id="btn-trigger-upload">Select file</button>
             <input type="file" id="dataset-file-input" accept=".csv,.xlsx,.json,.parquet" style="display: none;">
           </div>
@@ -232,8 +314,8 @@
         <div class="panel" id="prep-progress-container">
           <div class="panel-header">
             <div>
-              <h3 class="panel-title">Automated data preparation</h3>
-              <div class="panel-desc">Preprocessing operations applied prior to model ingestion.</div>
+              <h3 class="panel-title">Automated Data Clean-up</h3>
+              <div class="panel-desc">Smart preparation steps applied before AI model training.</div>
             </div>
             <span class="badge badge-low">Automated pipeline</span>
           </div>
@@ -242,42 +324,42 @@
             <div class="prep-item completed">
               <div class="prep-item-left">
                 <span class="check-indicator">✓</span>
-                <span>Detecting missing values and estimating imputation bounds</span>
+                <span>Checking for blank / missing info and auto-filling values</span>
               </div>
               <span style="font-size: 0.75rem; color: var(--color-secondary-data);">Completed</span>
             </div>
             <div class="prep-item completed">
               <div class="prep-item-left">
                 <span class="check-indicator">✓</span>
-                <span>Identifying duplicate identifiers and canonical records</span>
+                <span>Finding and removing duplicate records</span>
               </div>
               <span style="font-size: 0.75rem; color: var(--color-secondary-data);">Completed</span>
             </div>
             <div class="prep-item completed">
               <div class="prep-item-left">
                 <span class="check-indicator">✓</span>
-                <span>Isolating statistical distribution outliers</span>
+                <span>Flagging unusual numbers and extreme values (outliers)</span>
               </div>
               <span style="font-size: 0.75rem; color: var(--color-secondary-data);">Completed</span>
             </div>
             <div class="prep-item completed">
               <div class="prep-item-left">
                 <span class="check-indicator">✓</span>
-                <span>Encoding categorical ordinal and nominal variables</span>
+                <span>Converting text categories (e.g. Yes/No, Plans) into numbers for AI</span>
               </div>
               <span style="font-size: 0.75rem; color: var(--color-secondary-data);">Completed</span>
             </div>
             <div class="prep-item completed">
               <div class="prep-item-left">
                 <span class="check-indicator">✓</span>
-                <span>Scaling continuous numerical features</span>
+                <span>Balancing number scales so no single stat overpowers the model</span>
               </div>
               <span style="font-size: 0.75rem; color: var(--color-secondary-data);">Completed</span>
             </div>
             <div class="prep-item completed">
               <div class="prep-item-left">
                 <span class="check-indicator">✓</span>
-                <span>Partitioning stratified training and holdout validation sets</span>
+                <span>Splitting data into 80% for learning and 20% for testing real accuracy</span>
               </div>
               <span style="font-size: 0.75rem; color: var(--color-secondary-data);">Completed</span>
             </div>
@@ -289,7 +371,7 @@
       <div class="panel">
         <div class="panel-header">
           <div>
-            <h3 class="panel-title">Dataset health & audit summary</h3>
+            <h3 class="panel-title">Dataset Health & Quality Summary</h3>
             <div class="panel-desc" id="ds-file-name">enterprise_retail_churn_q3.csv</div>
           </div>
           <div style="font-size: 0.78rem; color: var(--color-text-faint);" id="ds-timestamp">Ingested: 2026-08-28 09:15:00</div>
@@ -300,11 +382,11 @@
             <thead>
               <tr>
                 <th>Total rows</th>
-                <th>Feature columns</th>
+                <th>Total columns</th>
                 <th>Missing values</th>
-                <th>Duplicate records</th>
-                <th>Outliers detected</th>
-                <th>Data quality score</th>
+                <th>Duplicate rows</th>
+                <th>Unusual numbers (outliers)</th>
+                <th>Overall data quality</th>
               </tr>
             </thead>
             <tbody>
@@ -319,7 +401,7 @@
             </tbody>
           </table>
         </div>
-      </div>
+
 
       <!-- Sample Preview Table -->
       <div class="panel">
@@ -337,18 +419,18 @@
     <!-- VIEW 3: MODEL BENCHMARK LAB -->
     <section id="view-models" class="view-section">
       <div style="margin-bottom: 1.5rem;">
-        <h2>Model Training & Comparative Benchmark</h2>
-        <p class="body-copy">Results from the last training run on this dataset stored in the SQLite database. Evaluated against 5-fold stratified cross-validation.</p>
+        <h2>Compare AI Models</h2>
+        <p class="body-copy">Results from training multiple AI algorithms on your dataset. Compare accuracy side-by-side to choose the best model.</p>
       </div>
 
       <!-- Benchmark Table -->
       <div class="panel">
         <div class="panel-header">
           <div>
-            <h3 class="panel-title">Algorithm benchmark matrix</h3>
-            <div class="panel-desc">Comparative metrics across candidate models.</div>
+            <h3 class="panel-title">Model Comparison Table</h3>
+            <div class="panel-desc">Higher accuracy, recall, and ROC-AUC scores mean more dependable forecasts.</div>
           </div>
-          <button type="button" class="btn btn-subtle btn-sm" id="btn-toggle-adv-model">View advanced model details</button>
+          <button type="button" class="btn btn-subtle btn-sm" id="btn-toggle-adv-model">View Model Accuracy Curve & Error Breakdown</button>
         </div>
 
         <div class="table-responsive">
@@ -356,12 +438,12 @@
             <thead>
               <tr>
                 <th>Algorithm</th>
-                <th>Accuracy</th>
-                <th>Precision</th>
-                <th>Recall</th>
-                <th>F1 score</th>
-                <th>ROC-AUC</th>
-                <th>Trained at</th>
+                <th>Accuracy (% Correct)</th>
+                <th>Precision (% True Alarms)</th>
+                <th>Recall (% Risks Caught)</th>
+                <th>F1 (Balanced Score)</th>
+                <th>ROC-AUC (Reliability)</th>
+                <th>Trained At</th>
               </tr>
             </thead>
             <tbody id="model-benchmark-tbody"></tbody>
@@ -370,47 +452,47 @@
 
         <!-- Plain-Language Recommendation Note -->
         <div id="model-recommendation-note" style="margin-top: 1.25rem; padding: 0.85rem 1rem; background: var(--color-panel-alt); border-left: 2px solid var(--color-accent); font-size: 0.88rem;">
-          <strong>Recommended model: Logistic Regression</strong> — provides highest AUC (83.9%) and well-calibrated probabilities on customer tenure and contract features.
+          <strong>Recommended model: Logistic Regression</strong> — provides highest reliability (83.9% AUC) and balanced risk probabilities across customer tenure and contract length.
         </div>
       </div>
 
       <!-- Collapsible Advanced Model Details (ROC Curve + Confusion Matrix) -->
       <div class="panel" id="adv-model-drawer" style="display: none;">
-        <h3 class="panel-title" style="margin-bottom: 1rem;">Advanced model details (Logistic Regression)</h3>
+        <h3 class="panel-title" style="margin-bottom: 1rem;">Detailed Model Evaluation (Logistic Regression)</h3>
         
         <div class="simulator-layout-grid">
           <div>
-            <h4 style="font-size: 0.95rem; margin-bottom: 0.5rem;">Receiver Operating Characteristic (ROC Curve)</h4>
-            <p class="body-copy" style="font-size: 0.8rem; margin-bottom: 1rem;">Visualizing true positive rate vs. false positive rate across classification thresholds.</p>
+            <h4 style="font-size: 0.95rem; margin-bottom: 0.5rem;">Model Accuracy Curve (ROC Curve)</h4>
+            <p class="body-copy" style="font-size: 0.8rem; margin-bottom: 1rem;">Shows how reliably the model catches true risk without sounding false alarms (higher curve = better).</p>
             <div id="roc-chart-container" style="max-width: 320px;"></div>
           </div>
 
           <div>
-            <h4 style="font-size: 0.95rem; margin-bottom: 0.5rem;">Confusion matrix (Test partition: 12,482 records)</h4>
-            <p class="body-copy" style="font-size: 0.8rem; margin-bottom: 1rem;">Stratified classification performance on holdout test partition.</p>
+            <h4 style="font-size: 0.95rem; margin-bottom: 0.5rem;">Prediction Breakdown (Confusion Matrix)</h4>
+            <p class="body-copy" style="font-size: 0.8rem; margin-bottom: 1rem;">Exact breakdown of what the model got right vs. missed on 12,482 test records.</p>
             <div id="cm-chart-container"></div>
           </div>
         </div>
 
         <!-- Model Card & Methodology Panel -->
         <div style="margin-top: 1.5rem; padding-top: 1.25rem; border-top: var(--border-hairline);">
-          <h4 style="font-size: 0.95rem; margin-bottom: 0.75rem; color: var(--color-accent);">Model Card & Methodology Statement</h4>
+          <h4 style="font-size: 0.95rem; margin-bottom: 0.75rem; color: var(--color-accent);">Model Information & How It Works</h4>
           <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; font-size: 0.82rem; color: var(--color-text-muted);">
             <div style="background: rgba(255, 255, 255, 0.02); padding: 0.85rem; border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.05);">
-              <div style="color: var(--color-text); font-weight: 600; margin-bottom: 0.25rem;">Algorithm Architecture</div>
-              <div>Binary Logistic Regression with L2 Regularization & Stochastic Gradient Descent (SGD) link optimization.</div>
+              <div style="color: var(--color-text); font-weight: 600; margin-bottom: 0.25rem;">AI Algorithm</div>
+              <div>Smart Logistic Regression with penalty control to prevent over-memorization (overfitting).</div>
             </div>
             <div style="background: rgba(255, 255, 255, 0.02); padding: 0.85rem; border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.05);">
-              <div style="color: var(--color-text); font-weight: 600; margin-bottom: 0.25rem;">Validation Partition</div>
-              <div>80% Stratified Training split / 20% Holdout Test split preserving exact class prevalence balance.</div>
+              <div style="color: var(--color-text); font-weight: 600; margin-bottom: 0.25rem;">Testing Method</div>
+              <div>80% of records used for training / 20% held back to test real-world accuracy on unseen cases.</div>
             </div>
             <div style="background: rgba(255, 255, 255, 0.02); padding: 0.85rem; border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.05);">
-              <div style="color: var(--color-text); font-weight: 600; margin-bottom: 0.25rem;">Probability Calibration</div>
-              <div>Sigmoid probability link function: σ(z) = 1 / (1 + e^-z) with decision threshold at p = 0.50.</div>
+              <div style="color: var(--color-text); font-weight: 600; margin-bottom: 0.25rem;">Risk Score Calculation</div>
+              <div>Converts statistical patterns into an intuitive 0% to 100% risk probability score.</div>
             </div>
             <div style="background: rgba(255, 255, 255, 0.02); padding: 0.85rem; border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.05);">
-              <div style="color: var(--color-text); font-weight: 600; margin-bottom: 0.25rem;">Feature Preprocessing</div>
-              <div>Min-Max normalization [0, 1] on numeric inputs; bounded binary one-hot encoding for categorical variables; Tukey IQR outlier fencing.</div>
+              <div style="color: var(--color-text); font-weight: 600; margin-bottom: 0.25rem;">Data Preparation</div>
+              <div>Standardizes numbers, encodes text options, and handles outliers before training begins.</div>
             </div>
           </div>
         </div>
@@ -421,8 +503,8 @@
     <!-- VIEW 4: PREDICTION CENTER & EXPLAINABLE AI -->
     <section id="view-predictions" class="view-section">
       <div style="margin-bottom: 1.5rem;">
-        <h2>Prediction Center & Explainable AI</h2>
-        <p class="body-copy">Individual record assessment and feature attribution explaining why the model reached this conclusion.</p>
+        <h2>Prediction Center & AI Explanations</h2>
+        <p class="body-copy">Look up any customer or account to see their risk score and the key reasons why the AI made that decision.</p>
       </div>
 
       <div style="display: grid; grid-template-columns: 1fr 1.2fr; gap: 1.5rem; align-items: start;">
@@ -431,20 +513,20 @@
         <div class="panel">
           <div class="panel-header">
             <div>
-              <div style="font-size: 0.8rem; color: var(--color-text-muted);">Assessed target</div>
+              <div style="font-size: 0.8rem; color: var(--color-text-muted);">Account / Customer</div>
               <h3 class="panel-title" id="pred-headline-record">Customer #10482</h3>
             </div>
             <span class="badge badge-high" id="pred-outcome-label">High Churn Risk</span>
           </div>
 
           <div style="margin-bottom: 1.5rem;">
-            <div style="font-size: 0.8rem; color: var(--color-text-muted);">Calculated probability</div>
+            <div style="font-size: 0.8rem; color: var(--color-text-muted);">Risk Probability</div>
             <div class="figure-serif figure-hero figure-accent" id="pred-headline-prob" style="margin: 0.25rem 0;">87.4%</div>
             <div style="font-size: 0.85rem; color: var(--color-text-muted);" id="pred-headline-conf">94.7% confidence</div>
           </div>
 
           <div style="border-top: var(--border-hairline); padding-top: 1rem;">
-            <h4 style="font-size: 0.9rem; margin-bottom: 0.4rem;">Executive explanation</h4>
+            <h4 style="font-size: 0.9rem; margin-bottom: 0.4rem;">Plain-Language Summary</h4>
             <p class="body-copy" id="pred-explanation-copy" style="font-size: 0.88rem; line-height: 1.55; color: var(--color-text);">
               Customer accounts in this segment exhibit a 42% decrease in order frequency over 60 days coupled with 2 open service tickets.
             </p>
@@ -455,10 +537,10 @@
         <div class="panel">
           <div class="panel-header">
             <div>
-              <h3 class="panel-title">Why did the model make this prediction?</h3>
-              <div class="panel-desc">Primary factors driving this outcome, ranked by SHAP contribution.</div>
+              <h3 class="panel-title">Why did the AI make this prediction?</h3>
+              <div class="panel-desc">Top factors influencing this score, ranked from biggest impact to smallest.</div>
             </div>
-            <span class="badge badge-subtle">Feature weights</span>
+            <span class="badge badge-subtle">Top Drivers</span>
           </div>
 
           <div id="feature-importance-container"></div>
@@ -471,15 +553,15 @@
     <!-- VIEW 5: RISK RADAR -->
     <section id="view-radar" class="view-section">
       <div style="margin-bottom: 1.5rem;">
-        <h2>Risk Radar & Cohort Inspector</h2>
-        <p class="body-copy">Filterable distribution of assessed entities by probability and confidence. Click any data point to inspect details.</p>
+        <h2>Risk Radar: All Accounts Visual Map</h2>
+        <p class="body-copy">Visual map of all accounts. Quickly spot accounts needing immediate attention and click any dot to inspect details.</p>
       </div>
 
       <div class="panel">
         <div class="panel-header">
           <div>
-            <h3 class="panel-title">Cohort risk distribution scatter</h3>
-            <div class="panel-desc">X-axis: Predicted risk probability • Y-axis: Model confidence</div>
+            <h3 class="panel-title">All Accounts Risk Map</h3>
+            <div class="panel-desc">Left to Right: Risk Level (0% to 100%) • Bottom to Top: Model Confidence</div>
           </div>
           <!-- Filter Buttons -->
           <div style="display: flex; gap: 0.35rem;">
@@ -494,16 +576,16 @@
         <div id="risk-radar-chart-container" class="radar-chart-wrapper" style="min-height: 280px; margin-bottom: 1.5rem;"></div>
 
         <!-- Filterable Records Table -->
-        <h4 style="margin-bottom: 0.75rem;">Assessed entities table</h4>
+        <h4 style="margin-bottom: 0.75rem;">Accounts & Customers List</h4>
         <div class="table-responsive">
           <table class="quiet-table" aria-label="Risk Radar Records Table">
             <thead>
               <tr>
-                <th>Record reference</th>
-                <th>Outcome classification</th>
-                <th>Probability</th>
+                <th>Account / Reference</th>
+                <th>Risk Classification</th>
+                <th>Risk Probability</th>
                 <th>Confidence</th>
-                <th>Evaluated at</th>
+                <th>Evaluated At</th>
                 <th>Action</th>
               </tr>
             </thead>
@@ -517,19 +599,19 @@
     <!-- VIEW 6: WHAT-IF SIMULATOR -->
     <section id="view-simulator" class="view-section">
       <div style="margin-bottom: 1.5rem;">
-        <h2>Prediction Simulator (What-If Analysis)</h2>
-        <p class="body-copy">Interactively adjust operational parameters to observe live changes in predicted probability and revenue exposure.</p>
+        <h2>What-If Scenario Simulator</h2>
+        <p class="body-copy">Interactive decision sandbox. Adjust operational levers to observe real-time probability recalculations, trajectory forecasting, and SHAP deltas.</p>
       </div>
 
-      <div class="panel" id="simulator-container"></div>
+      <div id="simulator-container"></div>
     </section>
 
 
     <!-- VIEW 7: REPORTS & EXPORTS -->
     <section id="view-reports" class="view-section">
       <div style="margin-bottom: 1.5rem;">
-        <h2>Reports & Decision Exports</h2>
-        <p class="body-copy">Generate compliance audits, export query-backed records from SQLite, and produce executive briefing documents.</p>
+        <h2>Reports & Data Downloads</h2>
+        <p class="body-copy">Download prediction spreadsheets, export data files, or print a ready-to-share executive summary.</p>
       </div>
 
       <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem;">

@@ -335,8 +335,8 @@ const Charts = {
           <path d="${rocPathD} L 295 185 Z" fill="rgba(217, 164, 65, 0.08)" />
           
           <text x="165" y="115" fill="#EDEAE3" font-size="12" font-family="var(--font-serif)">AUC = ${aucVal}</text>
-          <text x="165" y="212" fill="#636D7E" font-size="10" text-anchor="middle" font-family="var(--font-ui)">False positive rate</text>
-          <text x="15" y="100" fill="#636D7E" font-size="10" text-anchor="middle" font-family="var(--font-ui)" transform="rotate(-90 15 100)">True positive rate</text>
+          <text x="165" y="212" fill="#636D7E" font-size="10" text-anchor="middle" font-family="var(--font-ui)">False alarms rate</text>
+          <text x="15" y="100" fill="#636D7E" font-size="10" text-anchor="middle" font-family="var(--font-ui)" transform="rotate(-90 15 100)">Correctly caught rate</text>
         </svg>
       `;
     }
@@ -348,21 +348,25 @@ const Charts = {
       const tn = hasRealCm ? activeModel.confusionMatrix.tn : 933;
 
       cmEl.innerHTML = `
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; max-width: 300px; margin: 0 auto; text-align: center; font-size: 0.85rem;" role="table" aria-label="Holdout Confusion Matrix">
-          <div style="background: rgba(255, 255, 255, 0.035); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.08); padding: 1.1rem 0.5rem; border-radius: 14px;">
-            <div style="color: var(--color-text-muted); font-size: 0.75rem;">True Positives</div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; max-width: 340px; margin: 0 auto; text-align: center; font-size: 0.85rem;" role="table" aria-label="Prediction Accuracy Breakdown">
+          <div style="background: rgba(255, 255, 255, 0.035); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.08); padding: 1rem 0.5rem; border-radius: 14px;">
+            <div style="color: var(--color-accent); font-size: 0.76rem; font-weight: 600;">Correctly Caught</div>
+            <div style="color: var(--color-text-faint); font-size: 0.68rem; margin-bottom: 0.15rem;">True Positives (High Risk)</div>
             <div class="figure-serif" style="font-size: 1.4rem; color: #EDEAE3; margin-top: 0.2rem;">${tp.toLocaleString()}</div>
           </div>
-          <div style="background: rgba(255, 255, 255, 0.035); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.08); padding: 1.1rem 0.5rem; border-radius: 14px;">
-            <div style="color: var(--color-text-muted); font-size: 0.75rem;">False Positives</div>
+          <div style="background: rgba(255, 255, 255, 0.035); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.08); padding: 1rem 0.5rem; border-radius: 14px;">
+            <div style="color: #C28B36; font-size: 0.76rem; font-weight: 600;">False Alarms</div>
+            <div style="color: var(--color-text-faint); font-size: 0.68rem; margin-bottom: 0.15rem;">False Positives</div>
             <div class="figure-serif" style="font-size: 1.4rem; color: #C28B36; margin-top: 0.2rem;">${fp.toLocaleString()}</div>
           </div>
-          <div style="background: rgba(255, 255, 255, 0.035); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.08); padding: 1.1rem 0.5rem; border-radius: 14px;">
-            <div style="color: var(--color-text-muted); font-size: 0.75rem;">False Negatives</div>
+          <div style="background: rgba(255, 255, 255, 0.035); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.08); padding: 1rem 0.5rem; border-radius: 14px;">
+            <div style="color: #C28B36; font-size: 0.76rem; font-weight: 600;">Missed Cases</div>
+            <div style="color: var(--color-text-faint); font-size: 0.68rem; margin-bottom: 0.15rem;">False Negatives</div>
             <div class="figure-serif" style="font-size: 1.4rem; color: #C28B36; margin-top: 0.2rem;">${fn.toLocaleString()}</div>
           </div>
-          <div style="background: rgba(255, 255, 255, 0.035); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.08); padding: 1.1rem 0.5rem; border-radius: 14px;">
-            <div style="color: var(--color-text-muted); font-size: 0.75rem;">True Negatives</div>
+          <div style="background: rgba(255, 255, 255, 0.035); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.08); padding: 1rem 0.5rem; border-radius: 14px;">
+            <div style="color: #6B8F8A; font-size: 0.76rem; font-weight: 600;">Correctly Cleared</div>
+            <div style="color: var(--color-text-faint); font-size: 0.68rem; margin-bottom: 0.15rem;">True Negatives (Safe)</div>
             <div class="figure-serif" style="font-size: 1.4rem; color: #EDEAE3; margin-top: 0.2rem;">${tn.toLocaleString()}</div>
           </div>
         </div>
