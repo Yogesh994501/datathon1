@@ -148,12 +148,13 @@ const Charts = {
     const container = document.getElementById(containerId);
     if (!container) return;
 
-    const width = 760;
-    const height = 280;
-    const padding = { top: 20, right: 30, bottom: 40, left: 55 };
+    // Standard margin convention reserving generous space inside the coordinate system
+    const margin = { top: 28, right: 48, bottom: 56, left: 64 };
+    const width = 800;
+    const height = 340;
 
-    const chartW = width - padding.left - padding.right;
-    const chartH = height - padding.top - padding.bottom;
+    const chartW = width - margin.left - margin.right;
+    const chartH = height - margin.top - margin.bottom;
 
     // Filter predictions
     let list = [...predictions];
@@ -161,64 +162,97 @@ const Charts = {
       list = list.filter(p => p.risk_tier === activeFilter);
     }
 
-    // Coordinates: X = probability (0 to 100), Y = confidence (80 to 100)
-    const getX = (prob) => padding.left + (prob / 100) * chartW;
-    const getY = (conf) => padding.top + chartH - ((conf - 80) / 20) * chartH;
+    // Scale mappings
+    // Probability: 0 to 100
+    const getX = (prob) => margin.left + (Math.max(0, Math.min(100, prob)) / 100) * chartW;
+
+    // Confidence: 70 to 100 (accurately accommodates calibrated model confidence)
+    const minConf = 70;
+    const maxConf = 100;
+    const getY = (conf) => margin.top + chartH - ((Math.max(minConf, Math.min(maxConf, conf)) - minConf) / (maxConf - minConf)) * chartH;
 
     // Threshold zones:
     // Low: prob < 35, Medium: 35-70, High: > 70
-    const highX = getX(70);
-    const medX = getX(35);
+    const lowBoundaryX = getX(35);
+    const highBoundaryX = getX(70);
 
-    // Background zones
+    // Background zones (subtle, translucent glass-friendly tints)
     const zoneRects = `
-      <rect x="${padding.left}" y="${padding.top}" width="${medX - padding.left}" height="${chartH}" fill="rgba(107, 143, 138, 0.04)" />
-      <rect x="${medX}" y="${padding.top}" width="${highX - medX}" height="${chartH}" fill="rgba(194, 139, 54, 0.04)" />
-      <rect x="${highX}" y="${padding.top}" width="${width - padding.right - highX}" height="${chartH}" fill="rgba(217, 164, 65, 0.06)" />
+      <rect x="${margin.left}" y="${margin.top}" width="${lowBoundaryX - margin.left}" height="${chartH}" fill="rgba(107, 143, 138, 0.05)" rx="4" />
+      <rect x="${lowBoundaryX}" y="${margin.top}" width="${highBoundaryX - lowBoundaryX}" height="${chartH}" fill="rgba(194, 139, 54, 0.05)" rx="4" />
+      <rect x="${highBoundaryX}" y="${margin.top}" width="${margin.left + chartW - highBoundaryX}" height="${chartH}" fill="rgba(217, 164, 65, 0.07)" rx="4" />
     `;
 
-    // Horizontal grid
-    const yGrid = [85, 90, 95, 100].map(c => {
+    // Horizontal grid lines (70%, 80%, 90%, 100%)
+    const yGrid = [70, 80, 90, 100].map(c => {
       const y = getY(c);
       return `
-        <line x1="${padding.left}" y1="${y}" x2="${width - padding.right}" y2="${y}" stroke="#2A2F3B" stroke-width="1" stroke-dasharray="2,2" />
-        <text x="${padding.left - 10}" y="${y + 4}" fill="#636D7E" font-size="10" text-anchor="end" font-family="var(--font-ui)">${c}%</text>
+        <line x1="${margin.left}" y1="${y}" x2="${margin.left + chartW}" y2="${y}" stroke="rgba(255, 255, 255, 0.08)" stroke-width="1" stroke-dasharray="2,3" />
+        <text x="${margin.left - 12}" y="${y + 4}" fill="rgba(237, 234, 227, 0.5)" font-size="11" text-anchor="end" font-family="var(--font-ui)">${c}%</text>
       `;
     }).join('');
 
-    // Vertical boundary lines
-    const zoneLines = `
-      <line x1="${medX}" y1="${padding.top}" x2="${medX}" y2="${height - padding.bottom}" stroke="#2A2F3B" stroke-width="1" />
-      <text x="${(padding.left + medX) / 2}" y="${padding.top + 14}" fill="#6B8F8A" font-size="10" text-anchor="middle" font-family="var(--font-ui)">Low risk</text>
+    // X-Axis grid lines & ticks (0%, 25%, 50%, 75%, 100%)
+    const xGrid = [0, 25, 50, 75, 100].map(p => {
+      const x = getX(p);
+      return `
+        <line x1="${x}" y1="${margin.top}" x2="${x}" y2="${margin.top + chartH}" stroke="rgba(255, 255, 255, 0.05)" stroke-width="1" stroke-dasharray="2,3" />
+        <line x1="${x}" y1="${margin.top + chartH}" x2="${x}" y2="${margin.top + chartH + 6}" stroke="rgba(255, 255, 255, 0.2)" stroke-width="1" />
+        <text x="${x}" y="${margin.top + chartH + 20}" fill="rgba(237, 234, 227, 0.55)" font-size="11" text-anchor="middle" font-family="var(--font-ui)">${p}%</text>
+      `;
+    }).join('');
 
-      <line x1="${highX}" y1="${padding.top}" x2="${highX}" y2="${height - padding.bottom}" stroke="#2A2F3B" stroke-width="1" />
-      <text x="${(medX + highX) / 2}" y="${padding.top + 14}" fill="#C28B36" font-size="10" text-anchor="middle" font-family="var(--font-ui)">Medium risk</text>
-
-      <text x="${(highX + width - padding.right) / 2}" y="${padding.top + 14}" fill="#D9A441" font-size="10" text-anchor="middle" font-family="var(--font-ui)">High risk tier</text>
+    // Outer axes hairlines
+    const axesHairlines = `
+      <line x1="${margin.left}" y1="${margin.top + chartH}" x2="${margin.left + chartW}" y2="${margin.top + chartH}" stroke="rgba(255, 255, 255, 0.18)" stroke-width="1" />
+      <line x1="${margin.left}" y1="${margin.top}" x2="${margin.left}" y2="${margin.top + chartH}" stroke="rgba(255, 255, 255, 0.18)" stroke-width="1" />
     `;
 
-    // Render dots
+    // Vertical boundary zone lines & headers
+    const zoneLines = `
+      <line x1="${lowBoundaryX}" y1="${margin.top}" x2="${lowBoundaryX}" y2="${margin.top + chartH}" stroke="rgba(255, 255, 255, 0.14)" stroke-width="1" stroke-dasharray="4,4" />
+      <text x="${(margin.left + lowBoundaryX) / 2}" y="${margin.top + 16}" fill="#8EB7B1" font-size="11" font-weight="600" text-anchor="middle" font-family="var(--font-ui)">Low Risk Zone</text>
+
+      <line x1="${highBoundaryX}" y1="${margin.top}" x2="${highBoundaryX}" y2="${margin.top + chartH}" stroke="rgba(255, 255, 255, 0.14)" stroke-width="1" stroke-dasharray="4,4" />
+      <text x="${(lowBoundaryX + highBoundaryX) / 2}" y="${margin.top + 16}" fill="#E6B563" font-size="11" font-weight="600" text-anchor="middle" font-family="var(--font-ui)">Medium Risk Zone</text>
+
+      <text x="${(highBoundaryX + margin.left + chartW) / 2}" y="${margin.top + 16}" fill="#F0C46B" font-size="11" font-weight="600" text-anchor="middle" font-family="var(--font-ui)">High Risk Tier</text>
+    `;
+
+    // Render dots with glowing translucent halos
     const dots = list.map(p => {
       const x = getX(p.probability);
       const y = getY(p.confidence);
       const color = p.risk_tier === 'high' ? '#D9A441' : (p.risk_tier === 'medium' ? '#C28B36' : '#6B8F8A');
       return `
-        <circle cx="${x}" cy="${y}" r="6" fill="${color}" stroke="#12151C" stroke-width="1.5" style="cursor: pointer; transition: r 0.15s ease;" data-id="${p.id}" class="radar-node">
-          <title>${p.record_ref}: ${p.probability}% risk, ${p.confidence}% confidence</title>
-        </circle>
+        <g class="radar-node-group" data-id="${p.id}" style="cursor: pointer;">
+          <circle cx="${x}" cy="${y}" r="10" fill="${color}" fill-opacity="0.22" class="radar-node-halo" />
+          <circle cx="${x}" cy="${y}" r="5.5" fill="${color}" stroke="#12151C" stroke-width="1.5" class="radar-node">
+            <title>${p.record_ref}: ${p.probability}% risk, ${p.confidence}% confidence (${p.outcome_label})</title>
+          </circle>
+        </g>
       `;
     }).join('');
 
     const svg = `
-      <svg viewBox="0 0 ${width} ${height}" style="width: 100%; height: auto; display: block;" id="radar-svg-canvas">
+      <svg viewBox="0 0 ${width} ${height}" style="width: 100%; height: auto; display: block;" id="radar-svg-canvas" role="img" aria-label="Risk Radar Cohort Scatter Distribution">
+        <defs>
+          <clipPath id="chart-area-clip">
+            <rect x="${margin.left - 12}" y="${margin.top - 12}" width="${chartW + 24}" height="${chartH + 24}" />
+          </clipPath>
+        </defs>
         ${zoneRects}
         ${yGrid}
+        ${xGrid}
+        ${axesHairlines}
         ${zoneLines}
-        ${dots}
-        <!-- X Axis Title -->
-        <text x="${width / 2}" y="${height - 10}" fill="#9BA3AF" font-size="11" text-anchor="middle" font-family="var(--font-ui)">Predicted risk probability</text>
-        <!-- Y Axis Title -->
-        <text x="16" y="${height / 2}" fill="#9BA3AF" font-size="11" text-anchor="middle" font-family="var(--font-ui)" transform="rotate(-90 16 ${height / 2})">Model confidence</text>
+        <g clip-path="url(#chart-area-clip)">
+          ${dots}
+        </g>
+        <!-- X Axis Title (centered and contained within bottom margin) -->
+        <text x="${margin.left + chartW / 2}" y="${height - 12}" fill="rgba(237, 234, 227, 0.75)" font-size="12" font-weight="500" text-anchor="middle" font-family="var(--font-ui)">Predicted risk probability (%)</text>
+        <!-- Y Axis Title (properly rotated and offset from left boundary) -->
+        <text x="18" y="${margin.top + chartH / 2}" fill="rgba(237, 234, 227, 0.75)" font-size="12" font-weight="500" text-anchor="middle" font-family="var(--font-ui)" transform="rotate(-90 18 ${margin.top + chartH / 2})">Model confidence (%)</text>
       </svg>
     `;
 
@@ -227,7 +261,7 @@ const Charts = {
     // Attach click handlers to circles
     const svgEl = container.querySelector('#radar-svg-canvas');
     if (svgEl) {
-      svgEl.querySelectorAll('.radar-node').forEach(node => {
+      svgEl.querySelectorAll('.radar-node-group').forEach(node => {
         node.addEventListener('click', (e) => {
           const id = e.currentTarget.getAttribute('data-id');
           if (onSelectRecord) onSelectRecord(id);
@@ -265,20 +299,20 @@ const Charts = {
     if (cmEl) {
       // Confusion Matrix 2x2 Table Layout on 20% holdout test partition (1,409 records)
       cmEl.innerHTML = `
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 4px; max-width: 280px; margin: 0 auto; text-align: center; font-size: 0.85rem;">
-          <div style="background: var(--color-panel-alt); border: 1px solid var(--color-line); padding: 1rem 0.5rem; border-radius: 2px;">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; max-width: 300px; margin: 0 auto; text-align: center; font-size: 0.85rem;">
+          <div style="background: rgba(255, 255, 255, 0.035); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.08); padding: 1.1rem 0.5rem; border-radius: 14px;">
             <div style="color: var(--color-text-muted); font-size: 0.75rem;">True Positives</div>
             <div class="figure-serif" style="font-size: 1.4rem; color: #EDEAE3; margin-top: 0.2rem;">209</div>
           </div>
-          <div style="background: var(--color-panel-alt); border: 1px solid var(--color-line); padding: 1rem 0.5rem; border-radius: 2px;">
+          <div style="background: rgba(255, 255, 255, 0.035); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.08); padding: 1.1rem 0.5rem; border-radius: 14px;">
             <div style="color: var(--color-text-muted); font-size: 0.75rem;">False Positives</div>
             <div class="figure-serif" style="font-size: 1.4rem; color: #C28B36; margin-top: 0.2rem;">102</div>
           </div>
-          <div style="background: var(--color-panel-alt); border: 1px solid var(--color-line); padding: 1rem 0.5rem; border-radius: 2px;">
+          <div style="background: rgba(255, 255, 255, 0.035); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.08); padding: 1.1rem 0.5rem; border-radius: 14px;">
             <div style="color: var(--color-text-muted); font-size: 0.75rem;">False Negatives</div>
             <div class="figure-serif" style="font-size: 1.4rem; color: #C28B36; margin-top: 0.2rem;">165</div>
           </div>
-          <div style="background: var(--color-panel-alt); border: 1px solid var(--color-line); padding: 1rem 0.5rem; border-radius: 2px;">
+          <div style="background: rgba(255, 255, 255, 0.035); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.08); padding: 1.1rem 0.5rem; border-radius: 14px;">
             <div style="color: var(--color-text-muted); font-size: 0.75rem;">True Negatives</div>
             <div class="figure-serif" style="font-size: 1.4rem; color: #EDEAE3; margin-top: 0.2rem;">933</div>
           </div>

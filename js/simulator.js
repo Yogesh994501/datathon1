@@ -60,7 +60,7 @@ const Simulator = {
           </div>
         </div>
 
-        <div style="background: var(--color-panel-alt); border: var(--border-hairline); border-radius: var(--radius-sm); padding: 1.5rem;">
+        <div style="background: rgba(255, 255, 255, 0.035); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.075); border-radius: 18px; padding: 1.75rem; box-shadow: 0 12px 40px rgba(0, 0, 0, 0.16);">
           <h3 style="margin-bottom: 1.25rem;">Projected outcome comparison</h3>
           
           <div style="border-bottom: var(--border-hairline); padding-bottom: 1rem; margin-bottom: 1rem;">

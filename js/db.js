@@ -13,7 +13,7 @@ class RelationalDatabase {
       feature_importances: [],
       recommendations: []
     };
-    this.dbName = 'predictiq_database_v3';
+    this.dbName = 'predictiq_database_v4';
     this.isReady = false;
   }
 
@@ -365,7 +365,7 @@ class RelationalDatabase {
           record_ref: 'Customer #6713-OKOMC',
           outcome_label: 'Elevated Risk',
           probability: 58.4,
-          confidence: 78.0,
+          confidence: 84.5,
           risk_tier: 'medium',
           created_at: '2026-09-07 08:33:00'
         },
@@ -375,7 +375,7 @@ class RelationalDatabase {
           record_ref: 'Customer #7892-POOKP',
           outcome_label: 'Elevated Risk',
           probability: 54.1,
-          confidence: 76.5,
+          confidence: 82.0,
           risk_tier: 'medium',
           created_at: '2026-09-07 08:33:00'
         },
@@ -385,7 +385,7 @@ class RelationalDatabase {
           record_ref: 'Customer #6388-TABGU',
           outcome_label: 'Elevated Risk',
           probability: 49.3,
-          confidence: 75.0,
+          confidence: 86.8,
           risk_tier: 'medium',
           created_at: '2026-09-07 08:34:00'
         },
@@ -395,7 +395,7 @@ class RelationalDatabase {
           record_ref: 'Customer #9763-GRSKD',
           outcome_label: 'Elevated Risk',
           probability: 43.6,
-          confidence: 73.5,
+          confidence: 79.5,
           risk_tier: 'medium',
           created_at: '2026-09-07 08:34:00'
         },
@@ -405,7 +405,7 @@ class RelationalDatabase {
           record_ref: 'Customer #7795-CFOCW',
           outcome_label: 'Elevated Risk',
           probability: 38.2,
-          confidence: 72.0,
+          confidence: 81.2,
           risk_tier: 'medium',
           created_at: '2026-09-07 08:35:00'
         },

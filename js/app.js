@@ -293,7 +293,7 @@ function renderModelBenchmarkSection(modelRuns, activeModel) {
   tbody.innerHTML = modelRuns.map(mr => {
     const isRec = mr.is_recommended === 1;
     return `
-      <tr style="${isRec ? 'background: var(--color-panel-alt); font-weight: 500;' : ''}">
+      <tr style="${isRec ? 'background: rgba(217, 164, 65, 0.08); font-weight: 500;' : ''}">
         <td>
           <div style="display: flex; align-items: center; gap: 0.5rem;">
             <span>${algoLabels[mr.algorithm] || mr.algorithm}</span>
@@ -420,7 +420,7 @@ function openRecordInspector(recordId) {
       </span>
     </div>
 
-    <div class="panel" style="background: var(--color-panel-alt); margin-bottom: 1.5rem;">
+    <div class="memo-card" style="margin-bottom: 1.5rem;">
       <h4 style="margin-bottom: 0.5rem;">Prescribed action memo</h4>
       <p class="body-copy" style="font-size: 0.88rem; line-height: 1.5; color: var(--color-text);">
         ${recommendation ? recommendation.summary_text : 'Continue standard monitoring protocol; re-evaluate at next checkpoint.'}
