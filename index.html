@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PredictIQ — AI Predictive Insight Dashboard</title>
+  <meta name="description" content="PredictIQ: A sober, executive AI Decision Intelligence platform turning historical data into explainable forecasts and actions.">
+  
+  <!-- Fonts: Newsreader (High contrast serif for headline figures) & Plus Jakarta Sans (Grotesk sans for UI) with system fallbacks -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="css/tokens.css">
+  <link rel="stylesheet" href="css/main.css">
+</head>
+<body class="bg-grid-texture">
+
+  <!-- The Signal: persistent scroll-reactive background canvas -->
+  <canvas id="signal-canvas" aria-hidden="true"></canvas>
+
+  <!-- Application Header & Top Navigation -->
+  <header class="app-header" role="banner">
+    <div class="header-inner">
+      <div class="brand-group">
+        <a href="#" class="brand-title" onclick="switchView('overview'); return false;">
+          <span>PredictIQ</span>
+          <span class="brand-subtitle">Executive Decision Intelligence</span>
+        </a>
+
+        <!-- Domain Selector Switcher -->
+        <div class="domain-selector" role="group" aria-label="Select industry domain">
+          <button type="button" class="domain-btn active" data-domain="retail">Retail</button>
+          <button type="button" class="domain-btn" data-domain="finance">Finance</button>
+          <button type="button" class="domain-btn" data-domain="healthcare">Healthcare</button>
+          <button type="button" class="domain-btn" data-domain="marketing">Marketing</button>
+        </div>
+      </div>
+
+      <!-- Navigation Tabs -->
+      <nav class="nav-tabs" role="navigation" aria-label="Workspace modules">
+        <button type="button" class="nav-tab active" data-view="overview">Executive Briefing</button>
+        <button type="button" class="nav-tab" data-view="dataset">Dataset Studio</button>
+        <button type="button" class="nav-tab" data-view="models">Model Benchmark</button>
+        <button type="button" class="nav-tab" data-view="predictions">Prediction Center</button>
+        <button type="button" class="nav-tab" data-view="radar">Risk Radar</button>
+        <button type="button" class="nav-tab" data-view="simulator">What-If Simulator</button>
+        <button type="button" class="nav-tab" data-view="reports">Reports</button>
+      </nav>
+
+      <!-- Database & Demo Actions -->
+      <div style="display: flex; align-items: center; gap: 0.5rem;">
+        <button type="button" class="btn btn-subtle btn-sm" id="btn-reset-demo-db" title="Re-seed pristine benchmark dataset">Reset demo data</button>
+        <button type="button" class="btn btn-subtle btn-sm" id="btn-export-db-file" title="Export SQLite database as JSON">Export SQLite DB</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Workspace -->
+  <main class="main-wrapper" id="main-content" role="main">
+
+    <!-- VIEW 1: EXECUTIVE BRIEFING (OVERVIEW) -->
+    <section id="view-overview" class="view-section active">
+      
+      <!-- Editorial Hero Statement -->
+      <div style="margin-bottom: 2rem;">
+        <div style="font-size: 0.8rem; color: var(--color-accent); font-weight: 600; margin-bottom: 0.5rem;" id="briefing-domain-title">
+          Retail & Commerce
+        </div>
+        <h1 class="figure-serif figure-hero" style="margin-bottom: 0.75rem; max-width: 25ch;">
+          Turn historical data into tomorrow's decisions.
+        </h1>
+        <p class="body-copy" id="briefing-domain-desc">
+          Forecast model calibrated for customer churn propensity. An AI-powered decision intelligence platform that transforms raw datasets into explainable, actionable forecasts.
+        </p>
+      </div>
+
+      <!-- Quiet Stat Row with Hairline Dividers (Populated from SQLite) -->
+      <div class="stat-bar" role="region" aria-label="Key model metrics">
+        <div class="stat-cell">
+          <div class="stat-label">Model accuracy</div>
+          <div class="figure-serif figure-card" id="stat-model-acc">94.7%</div>
+          <div class="stat-subtext">Last calibrated run</div>
+        </div>
+        <div class="stat-cell">
+          <div class="stat-label">Records evaluated</div>
+          <div class="figure-serif figure-card" id="stat-records-evaluated">84,291</div>
+          <div class="stat-subtext">In-database cohort</div>
+        </div>
+        <div class="stat-cell">
+          <div class="stat-label">ROC-AUC score</div>
+          <div class="figure-serif figure-card figure-accent" id="stat-avg-confidence">97.4%</div>
+          <div class="stat-subtext">XGBoost discriminator</div>
+        </div>
+        <div class="stat-cell">
+          <div class="stat-label" id="stat-financial-label">Revenue at Risk</div>
+          <div class="figure-serif figure-card" id="stat-financial-exposure">$840,000</div>
+          <div class="stat-subtext">Actionable intervention pool</div>
+        </div>
+      </div>
+
+      <!-- One-Time Orchestrated Pipeline Sequence Diagram -->
+      <div class="pipeline-container" id="pipeline-section" role="region" aria-label="AI Decision Pipeline">
+        <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 1rem;">
+          <div>
+            <h3>The Decision Intelligence Pipeline</h3>
+            <p class="body-copy" style="font-size: 0.82rem; margin-top: 0.2rem;">From uncurated records to timely organizational action.</p>
+          </div>
+          <div style="font-size: 0.75rem; color: var(--color-text-faint);">Click any stage to inspect</div>
+        </div>
+
+        <!-- Hairline Connector SVG with One-Time Draw -->
+        <svg class="pipeline-connector-svg" viewBox="0 0 1000 20" preserveAspectRatio="none" role="presentation">
+          <line x1="0" y1="10" x2="1000" y2="10" class="pipeline-path" />
+          <line x1="0" y1="10" x2="1000" y2="10" id="pipeline-anim-path" class="pipeline-path" />
+        </svg>
+
+        <div class="pipeline-steps-grid">
+          <!-- Step 1 -->
+          <div class="pipeline-step" data-target-view="dataset" style="cursor: pointer;" tabindex="0">
+            <div class="step-seq">1. Raw Data</div>
+            <div class="step-title">Ingestion Studio</div>
+            <div class="step-desc">Historical data records with missing values and outliers ingested into SQLite.</div>
+          </div>
+          <!-- Step 2 -->
+          <div class="pipeline-step" data-target-view="dataset" style="cursor: pointer;" tabindex="0">
+            <div class="step-seq">2. Data Cleaning</div>
+            <div class="step-title">Automated Prep</div>
+            <div class="step-desc">Imputation, deduplication, feature scaling, and categorical encoding.</div>
+          </div>
+          <!-- Step 3 -->
+          <div class="pipeline-step" data-target-view="models" style="cursor: pointer;" tabindex="0">
+            <div class="step-seq">3. Model Training</div>
+            <div class="step-title">Benchmark Lab</div>
+            <div class="step-desc">Comparative evaluation across XGBoost, Random Forest, and Neural Networks.</div>
+          </div>
+          <!-- Step 4 -->
+          <div class="pipeline-step" data-target-view="predictions" style="cursor: pointer;" tabindex="0">
+            <div class="step-seq">4. Prediction</div>
+            <div class="step-title">Outcome & Probability</div>
+            <div class="step-desc">Calibrated probability distributions and model confidence scoring.</div>
+          </div>
+          <!-- Step 5 -->
+          <div class="pipeline-step active" data-target-view="reports" style="cursor: pointer;" tabindex="0">
+            <div class="step-seq">5. Decision</div>
+            <div class="step-title">Executive Action</div>
+            <div class="step-desc">Specific organizational recommendations and revenue protection targets.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Grid: Forecast Trend Chart + AI Executive Memo -->
+      <div style="display: grid; grid-template-columns: 1.4fr 1fr; gap: 1.5rem; align-items: start;">
+        
+        <!-- Trend Forecast Chart Panel -->
+        <div class="panel">
+          <div class="panel-header">
+            <div>
+              <h3 class="panel-title">Cohort trajectory forecast</h3>
+              <div class="panel-desc">Historical observations mapped against the 90-day AI predictive horizon.</div>
+            </div>
+            <span class="badge badge-subtle">Updated from SQLite</span>
+          </div>
+          <div id="trend-chart-container" style="min-height: 240px;"></div>
+        </div>
+
+        <!-- AI Executive Memo Panel -->
+        <div class="panel">
+          <div class="panel-header">
+            <div>
+              <h3 class="panel-title">Executive insight memo</h3>
+              <div class="panel-desc">Synthesized model conclusions for decision makers.</div>
+            </div>
+            <span class="badge badge-high">High priority</span>
+          </div>
+
+          <div class="memo-card">
+            <div class="memo-header-tag">Key model finding</div>
+            <p class="memo-body" id="memo-finding-text">
+              Customer churn is projected to increase by 14% over the next 30 days among mid-tier enterprise accounts with reduced transactional velocity.
+            </p>
+          </div>
+
+          <div style="margin-top: 1.25rem;">
+            <div style="font-size: 0.8rem; color: var(--color-text-muted); font-weight: 500; margin-bottom: 0.35rem;">Prescribed organizational action</div>
+            <p class="body-copy" id="memo-action-text" style="color: var(--color-text); font-size: 0.9rem; line-height: 1.5;">
+              Deploy high-priority retention incentive and assign dedicated account director before next billing cycle.
+            </p>
+          </div>
+
+          <div style="margin-top: 1.5rem; padding-top: 1rem; border-top: var(--border-hairline); display: flex; justify-content: space-between; align-items: baseline;">
+            <span style="font-size: 0.8rem; color: var(--color-text-muted);">Potential exposure protected</span>
+            <span class="figure-serif figure-card" id="memo-impact-display" style="color: var(--color-accent); font-size: 1.8rem;">$840,000</span>
+          </div>
+        </div>
+
+      </div>
+
+    </section>
+
+
+    <!-- VIEW 2: DATASET STUDIO -->
+    <section id="view-dataset" class="view-section">
+      <div style="margin-bottom: 1.5rem;">
+        <h2>Dataset Ingestion & Preparation Studio</h2>
+        <p class="body-copy">Ingest raw transactional records, inspect health metrics, and review automated preprocessing pipelines.</p>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem;">
+        <!-- Upload Zone -->
+        <div class="panel">
+          <h3 class="panel-title" style="margin-bottom: 0.5rem;">Ingest new dataset</h3>
+          <p class="body-copy" style="font-size: 0.85rem; margin-bottom: 1rem;">Supports CSV, XLSX, and JSON formats. Data is stored directly into the in-browser SQLite database.</p>
+          
+          <div id="dataset-drop-zone" style="border: 2px dashed var(--color-line); padding: 2.5rem 1.5rem; text-align: center; border-radius: var(--radius-sm); cursor: pointer; transition: border-color 0.15s ease;">
+            <div style="color: var(--color-text); font-weight: 500; margin-bottom: 0.35rem;">Drop dataset file here</div>
+            <div style="font-size: 0.8rem; color: var(--color-text-muted); margin-bottom: 1rem;">or browse from local drive</div>
+            <button type="button" class="btn btn-subtle" id="btn-trigger-upload">Select file</button>
+            <input type="file" id="dataset-file-input" accept=".csv,.xlsx,.json,.parquet" style="display: none;">
+          </div>
+          <div id="upload-complete-note" style="display: none; margin-top: 0.75rem; font-size: 0.82rem; color: var(--color-secondary-data);"></div>
+        </div>
+
+        <!-- Automated Data Prep Progress Checklist -->
+        <div class="panel" id="prep-progress-container">
+          <div class="panel-header">
+            <div>
+              <h3 class="panel-title">Automated data preparation</h3>
+              <div class="panel-desc">Preprocessing operations applied prior to model ingestion.</div>
+            </div>
+            <span class="badge badge-low">Automated pipeline</span>
+          </div>
+
+          <div class="prep-checklist" id="prep-checklist-el">
+            <div class="prep-item completed">
+              <div class="prep-item-left">
+                <span class="check-indicator">✓</span>
+                <span>Detecting missing values and estimating imputation bounds</span>
+              </div>
+              <span style="font-size: 0.75rem; color: var(--color-secondary-data);">Completed</span>
+            </div>
+            <div class="prep-item completed">
+              <div class="prep-item-left">
+                <span class="check-indicator">✓</span>
+                <span>Identifying duplicate identifiers and canonical records</span>
+              </div>
+              <span style="font-size: 0.75rem; color: var(--color-secondary-data);">Completed</span>
+            </div>
+            <div class="prep-item completed">
+              <div class="prep-item-left">
+                <span class="check-indicator">✓</span>
+                <span>Isolating statistical distribution outliers</span>
+              </div>
+              <span style="font-size: 0.75rem; color: var(--color-secondary-data);">Completed</span>
+            </div>
+            <div class="prep-item completed">
+              <div class="prep-item-left">
+                <span class="check-indicator">✓</span>
+                <span>Encoding categorical ordinal and nominal variables</span>
+              </div>
+              <span style="font-size: 0.75rem; color: var(--color-secondary-data);">Completed</span>
+            </div>
+            <div class="prep-item completed">
+              <div class="prep-item-left">
+                <span class="check-indicator">✓</span>
+                <span>Scaling continuous numerical features</span>
+              </div>
+              <span style="font-size: 0.75rem; color: var(--color-secondary-data);">Completed</span>
+            </div>
+            <div class="prep-item completed">
+              <div class="prep-item-left">
+                <span class="check-indicator">✓</span>
+                <span>Partitioning stratified training and holdout validation sets</span>
+              </div>
+              <span style="font-size: 0.75rem; color: var(--color-secondary-data);">Completed</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Dataset Health Table (Queried from SQLite) -->
+      <div class="panel">
+        <div class="panel-header">
+          <div>
+            <h3 class="panel-title">Dataset health & audit summary</h3>
+            <div class="panel-desc" id="ds-file-name">enterprise_retail_churn_q3.csv</div>
+          </div>
+          <div style="font-size: 0.78rem; color: var(--color-text-faint);" id="ds-timestamp">Ingested: 2026-08-28 09:15:00</div>
+        </div>
+
+        <div class="table-responsive">
+          <table class="quiet-table" aria-label="Dataset Health Audit">
+            <thead>
+              <tr>
+                <th>Total rows</th>
+                <th>Feature columns</th>
+                <th>Missing values</th>
+                <th>Duplicate records</th>
+                <th>Outliers detected</th>
+                <th>Data quality score</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="figure-serif" id="ds-row-count">84,291</td>
+                <td class="figure-serif" id="ds-col-count">24</td>
+                <td class="figure-serif" id="ds-missing-pct">2.8%</td>
+                <td class="figure-serif" id="ds-duplicates">412</td>
+                <td class="figure-serif" id="ds-outliers">73</td>
+                <td class="figure-serif figure-accent" id="ds-quality-score">91.4%</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Sample Preview Table -->
+      <div class="panel">
+        <h3 class="panel-title" style="margin-bottom: 0.75rem;">Sample record preview</h3>
+        <div class="table-responsive">
+          <table class="quiet-table" aria-label="Sample Records Table">
+            <thead id="ds-preview-thead"></thead>
+            <tbody id="ds-preview-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+
+    <!-- VIEW 3: MODEL BENCHMARK LAB -->
+    <section id="view-models" class="view-section">
+      <div style="margin-bottom: 1.5rem;">
+        <h2>Model Training & Comparative Benchmark</h2>
+        <p class="body-copy">Results from the last training run on this dataset stored in the SQLite database. Evaluated against 5-fold stratified cross-validation.</p>
+      </div>
+
+      <!-- Benchmark Table -->
+      <div class="panel">
+        <div class="panel-header">
+          <div>
+            <h3 class="panel-title">Algorithm benchmark matrix</h3>
+            <div class="panel-desc">Comparative metrics across candidate models.</div>
+          </div>
+          <button type="button" class="btn btn-subtle btn-sm" id="btn-toggle-adv-model">View advanced model details</button>
+        </div>
+
+        <div class="table-responsive">
+          <table class="quiet-table" aria-label="Model Benchmark Comparison">
+            <thead>
+              <tr>
+                <th>Algorithm</th>
+                <th>Accuracy</th>
+                <th>Precision</th>
+                <th>Recall</th>
+                <th>F1 score</th>
+                <th>ROC-AUC</th>
+                <th>Trained at</th>
+              </tr>
+            </thead>
+            <tbody id="model-benchmark-tbody"></tbody>
+          </table>
+        </div>
+
+        <!-- Plain-Language Recommendation Note -->
+        <div id="model-recommendation-note" style="margin-top: 1.25rem; padding: 0.85rem 1rem; background: var(--color-panel-alt); border-left: 2px solid var(--color-accent); font-size: 0.88rem;">
+          <strong>Recommended model: Logistic Regression</strong> — provides highest AUC (83.9%) and well-calibrated probabilities on customer tenure and contract features.
+        </div>
+      </div>
+
+      <!-- Collapsible Advanced Model Details (ROC Curve + Confusion Matrix) -->
+      <div class="panel" id="adv-model-drawer" style="display: none;">
+        <h3 class="panel-title" style="margin-bottom: 1rem;">Advanced model details (Logistic Regression)</h3>
+        
+        <div style="display: grid; grid-template-columns: 1.2fr 1fr; gap: 2rem; align-items: start;">
+          <div>
+            <h4 style="font-size: 0.95rem; margin-bottom: 0.5rem;">Receiver Operating Characteristic (ROC Curve)</h4>
+            <p class="body-copy" style="font-size: 0.8rem; margin-bottom: 1rem;">Visualizing true positive rate vs. false positive rate across classification thresholds.</p>
+            <div id="roc-chart-container" style="max-width: 320px;"></div>
+          </div>
+
+          <div>
+            <h4 style="font-size: 0.95rem; margin-bottom: 0.5rem;">Confusion matrix (Test partition: 12,482 records)</h4>
+            <p class="body-copy" style="font-size: 0.8rem; margin-bottom: 1rem;">Stratified classification performance on holdout test partition.</p>
+            <div id="cm-chart-container"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+
+    <!-- VIEW 4: PREDICTION CENTER & EXPLAINABLE AI -->
+    <section id="view-predictions" class="view-section">
+      <div style="margin-bottom: 1.5rem;">
+        <h2>Prediction Center & Explainable AI</h2>
+        <p class="body-copy">Individual record assessment and feature attribution explaining why the model reached this conclusion.</p>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1.2fr; gap: 1.5rem; align-items: start;">
+        
+        <!-- Primary Outcome Card -->
+        <div class="panel">
+          <div class="panel-header">
+            <div>
+              <div style="font-size: 0.8rem; color: var(--color-text-muted);">Assessed target</div>
+              <h3 class="panel-title" id="pred-headline-record">Customer #10482</h3>
+            </div>
+            <span class="badge badge-high" id="pred-outcome-label">High Churn Risk</span>
+          </div>
+
+          <div style="margin-bottom: 1.5rem;">
+            <div style="font-size: 0.8rem; color: var(--color-text-muted);">Calculated probability</div>
+            <div class="figure-serif figure-hero figure-accent" id="pred-headline-prob" style="margin: 0.25rem 0;">87.4%</div>
+            <div style="font-size: 0.85rem; color: var(--color-text-muted);" id="pred-headline-conf">94.7% confidence</div>
+          </div>
+
+          <div style="border-top: var(--border-hairline); padding-top: 1rem;">
+            <h4 style="font-size: 0.9rem; margin-bottom: 0.4rem;">Executive explanation</h4>
+            <p class="body-copy" id="pred-explanation-copy" style="font-size: 0.88rem; line-height: 1.55; color: var(--color-text);">
+              Customer accounts in this segment exhibit a 42% decrease in order frequency over 60 days coupled with 2 open service tickets.
+            </p>
+          </div>
+        </div>
+
+        <!-- Explainable AI: Feature Importance Bars -->
+        <div class="panel">
+          <div class="panel-header">
+            <div>
+              <h3 class="panel-title">Why did the model make this prediction?</h3>
+              <div class="panel-desc">Primary factors driving this outcome, ranked by SHAP contribution.</div>
+            </div>
+            <span class="badge badge-subtle">Feature weights</span>
+          </div>
+
+          <div id="feature-importance-container"></div>
+        </div>
+
+      </div>
+    </section>
+
+
+    <!-- VIEW 5: RISK RADAR -->
+    <section id="view-radar" class="view-section">
+      <div style="margin-bottom: 1.5rem;">
+        <h2>Risk Radar & Cohort Inspector</h2>
+        <p class="body-copy">Filterable distribution of assessed entities by probability and confidence. Click any data point to inspect details.</p>
+      </div>
+
+      <div class="panel">
+        <div class="panel-header">
+          <div>
+            <h3 class="panel-title">Cohort risk distribution scatter</h3>
+            <div class="panel-desc">X-axis: Predicted risk probability • Y-axis: Model confidence</div>
+          </div>
+          <!-- Filter Buttons -->
+          <div style="display: flex; gap: 0.35rem;">
+            <button type="button" class="btn btn-subtle btn-sm radar-filter-btn active" data-filter="all">All records</button>
+            <button type="button" class="btn btn-subtle btn-sm radar-filter-btn" data-filter="high">High risk</button>
+            <button type="button" class="btn btn-subtle btn-sm radar-filter-btn" data-filter="medium">Medium risk</button>
+            <button type="button" class="btn btn-subtle btn-sm radar-filter-btn" data-filter="low">Low risk</button>
+          </div>
+        </div>
+
+        <!-- SVG Scatter Plot -->
+        <div id="risk-radar-chart-container" style="min-height: 280px; margin-bottom: 1.5rem;"></div>
+
+        <!-- Filterable Records Table -->
+        <h4 style="margin-bottom: 0.75rem;">Assessed entities table</h4>
+        <div class="table-responsive">
+          <table class="quiet-table" aria-label="Risk Radar Records Table">
+            <thead>
+              <tr>
+                <th>Record reference</th>
+                <th>Outcome classification</th>
+                <th>Probability</th>
+                <th>Confidence</th>
+                <th>Evaluated at</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="radar-records-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+
+    <!-- VIEW 6: WHAT-IF SIMULATOR -->
+    <section id="view-simulator" class="view-section">
+      <div style="margin-bottom: 1.5rem;">
+        <h2>Prediction Simulator (What-If Analysis)</h2>
+        <p class="body-copy">Interactively adjust operational parameters to observe live changes in predicted probability and revenue exposure.</p>
+      </div>
+
+      <div class="panel" id="simulator-container"></div>
+    </section>
+
+
+    <!-- VIEW 7: REPORTS & EXPORTS -->
+    <section id="view-reports" class="view-section">
+      <div style="margin-bottom: 1.5rem;">
+        <h2>Reports & Decision Exports</h2>
+        <p class="body-copy">Generate compliance audits, export query-backed records from SQLite, and produce executive briefing documents.</p>
+      </div>
+
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem;">
+        
+        <!-- CSV Export -->
+        <div class="panel">
+          <h3 class="panel-title" style="margin-bottom: 0.5rem;">Export predictions CSV</h3>
+          <p class="body-copy" style="font-size: 0.85rem; margin-bottom: 1.25rem;">
+            Executes a real SQL query against the in-browser database to export all records, probabilities, and confidence scores as a CSV file.
+          </p>
+          <button type="button" class="btn btn-primary" onclick="window.Reports.exportPredictionsCSV()">Download predictions.csv</button>
+        </div>
+
+        <!-- JSON Export -->
+        <div class="panel">
+          <h3 class="panel-title" style="margin-bottom: 0.5rem;">Export predictions JSON</h3>
+          <p class="body-copy" style="font-size: 0.85rem; margin-bottom: 1.25rem;">
+            Structured JSON payload containing all active predictions and risk tier classifications for programmatic API integration.
+          </p>
+          <button type="button" class="btn btn-subtle" onclick="window.Reports.exportPredictionsJSON()">Download predictions.json</button>
+        </div>
+
+        <!-- Print Executive Memo -->
+        <div class="panel">
+          <h3 class="panel-title" style="margin-bottom: 0.5rem;">Print executive memo</h3>
+          <p class="body-copy" style="font-size: 0.85rem; margin-bottom: 1.25rem;">
+            Formats a clean, print-ready forecasting bulletin memo for distribution to executive leadership and risk committees.
+          </p>
+          <button type="button" class="btn btn-subtle" onclick="window.Reports.printExecutiveMemo()">Print / save briefing memo</button>
+        </div>
+
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Side Drawer / Record Inspector Overlay -->
+  <div class="inspector-overlay" id="inspector-overlay"></div>
+  <div class="inspector-drawer" id="inspector-drawer-panel" style="display: none;" role="dialog" aria-modal="true" aria-label="Record Details"></div>
+
+  <!-- Permanent Footer with UI Honesty Disclosure -->
+  <footer class="app-footer" role="contentinfo">
+    <div class="footer-inner">
+      <div class="sample-data-disclosure">
+        <span class="status-dot" style="color: var(--color-accent);"></span>
+        <span>Operating in demonstration mode with in-browser SQLite database and benchmark models. Sample figures for decision modeling.</span>
+      </div>
+      <div>
+        <span>PredictIQ v3.0 • The Briefing Edition</span>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Scripts -->
+  <script src="js/db.js"></script>
+  <script src="js/state.js"></script>
+  <script src="js/charts.js"></script>
+  <script src="js/pipeline.js"></script>
+  <script src="js/motion.js"></script>
+  <script src="js/signal.js"></script>
+  <script src="js/simulator.js"></script>
+  <script src="js/reports.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

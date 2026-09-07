@@ -1,0 +1,43 @@
+/* PredictIQ Design Tokens — "The Briefing" Specification */
+:root {
+  /* Color Palette */
+  --color-base: #12151C;
+  --color-panel: #1B1F2A;
+  --color-panel-alt: #161A23;
+  --color-panel-hover: #222736;
+  --color-accent: #D9A441;
+  --color-accent-subtle: rgba(217, 164, 65, 0.12);
+  --color-accent-muted: #B8852B;
+  --color-secondary-data: #6B8F8A;
+  --color-secondary-subtle: rgba(107, 143, 138, 0.15);
+  
+  /* Neutral Text & Hairlines */
+  --color-text: #EDEAE3;
+  --color-text-muted: #9BA3AF;
+  --color-text-faint: #636D7E;
+  --color-line: #2A2F3B;
+  --color-line-light: #373E4D;
+
+  /* Risk Signals (Sober tone) */
+  --color-risk-high: #D9A441;
+  --color-risk-high-bg: rgba(217, 164, 65, 0.12);
+  --color-risk-medium: #C28B36;
+  --color-risk-medium-bg: rgba(194, 139, 54, 0.12);
+  --color-risk-low: #6B8F8A;
+  --color-risk-low-bg: rgba(107, 143, 138, 0.12);
+
+  /* Typography */
+  --font-ui: "Plus Jakarta Sans", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-serif: "Newsreader", "Playfair Display", "Charter", "Georgia", "Times New Roman", serif;
+
+  /* Sizing & Hairlines */
+  --border-hairline: 1px solid var(--color-line);
+  --border-accent: 1px solid var(--color-accent);
+  --radius-sm: 2px;
+  --radius-md: 4px;
+  --radius-lg: 6px;
+
+  /* Focus Indicator */
+  --focus-ring: 2px solid var(--color-accent);
+  --focus-offset: 2px;
+}
