@@ -155,9 +155,10 @@ document.addEventListener('DOMContentLoaded', async () => {
   // 8. Setup Dataset Ingestion Studio Simulation
   setupDatasetUploadStudio(state);
 
-  // 8b. Setup Hamburger Navigation Drawer & Global Live Search Bar
+  // 8b. Setup Hamburger Navigation Drawer, Global Live Search, and Data Tools Dropdown
   setupHamburgerDrawer();
   setupGlobalSearch();
+  setupDataToolsDropdown();
 
   // 9. Subscribe to State Changes
   state.subscribe((s) => {
@@ -260,6 +261,33 @@ function setupHamburgerDrawer() {
   drawerItems.forEach(item => {
     item.addEventListener('click', () => {
       closeDrawer();
+    });
+  });
+}
+
+function setupDataToolsDropdown() {
+  const toggleBtn = document.getElementById('btn-data-tools-toggle');
+  const menu = document.getElementById('data-tools-menu');
+  const dropdown = document.getElementById('data-tools-dropdown');
+  if (!toggleBtn || !menu) return;
+
+  toggleBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    menu.classList.toggle('active');
+    toggleBtn.setAttribute('aria-expanded', menu.classList.contains('active'));
+  });
+
+  document.addEventListener('click', (e) => {
+    if (dropdown && !dropdown.contains(e.target)) {
+      menu.classList.remove('active');
+      toggleBtn.setAttribute('aria-expanded', 'false');
+    }
+  });
+
+  menu.querySelectorAll('.data-tools-menu-item').forEach(item => {
+    item.addEventListener('click', () => {
+      menu.classList.remove('active');
+      toggleBtn.setAttribute('aria-expanded', 'false');
     });
   });
 }

@@ -31,8 +31,15 @@
         </button>
 
         <a href="#" class="brand-title" onclick="switchView('overview'); return false;">
-          <span>PredictIQ</span>
-          <span class="brand-subtitle">AI Decision Intelligence</span>
+          <div class="brand-badge-icon" aria-hidden="true">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0B0F19" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
+              <polyline points="2 17 12 22 22 17"></polyline>
+              <polyline points="2 12 12 17 22 12"></polyline>
+            </svg>
+          </div>
+          <span class="brand-name-text">PredictIQ</span>
+          <span class="brand-subtitle">Decision Intelligence</span>
         </a>
 
         <!-- Domain Selector Switcher -->
@@ -51,24 +58,54 @@
             <circle cx="11" cy="11" r="8"></circle>
             <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
           </svg>
-          <input type="search" id="global-search-input" class="header-search-input" placeholder="Search sections, accounts, models, or metrics... (Press /)" autocomplete="off" aria-label="Search dashboard" />
+          <input type="search" id="global-search-input" class="header-search-input" placeholder="Search sections, records, models... (Press /)" autocomplete="off" aria-label="Search dashboard" />
           <button type="button" id="btn-search-clear" class="header-search-clear" aria-label="Clear search" title="Clear">✕</button>
           <kbd class="search-kbd-shortcut" title="Press forward slash to search">/</kbd>
         </div>
         <div class="search-results-dropdown" id="search-results-dropdown" role="listbox" aria-label="Search suggestions"></div>
       </div>
 
-      <!-- Database & Mode Indicator -->
-      <div style="display: flex; align-items: center; gap: 0.65rem;">
-        <div id="mode-status-badge" class="badge badge-subtle" style="font-size: 0.76rem;" role="status" aria-live="polite">
+      <!-- Right Header Actions -->
+      <div class="header-actions-group">
+        <!-- Status Indicator -->
+        <div id="mode-status-badge" class="badge badge-subtle header-status-pill" role="status" aria-live="polite">
           <span class="status-dot" id="mode-status-dot" style="color: var(--color-accent);"></span>
           <span id="mode-status-text">Demo Benchmark</span>
         </div>
-        <button type="button" class="btn btn-subtle btn-sm" id="btn-reset-demo-db" title="Re-seed pristine benchmark dataset">Reset demo</button>
-        <button type="button" class="btn btn-subtle btn-sm" id="btn-export-session" title="Export full session JSON (dataset + trained model params)">Export Session</button>
-        <button type="button" class="btn btn-subtle btn-sm" id="btn-import-session" title="Import previously saved session JSON">Import Session</button>
+
+        <!-- What-If Simulator Direct Link -->
+        <a href="what_if_simulator.html" class="btn-header-simulator" title="Open What-If Scenario Simulator">
+          <span class="sim-btn-icon">🎛️</span>
+          <span>What-If Simulator</span>
+          <span class="sim-btn-arrow">↗</span>
+        </a>
+
+        <!-- Data Tools Dropdown -->
+        <div class="data-tools-dropdown" id="data-tools-dropdown">
+          <button type="button" class="btn btn-subtle btn-sm data-tools-btn" id="btn-data-tools-toggle" aria-expanded="false" aria-haspopup="true" title="Database & Session Tools">
+            <span>⚙️ Tools</span>
+            <span class="dropdown-caret">▾</span>
+          </button>
+          <div class="data-tools-menu" id="data-tools-menu" role="menu" aria-label="Data tools">
+            <button type="button" class="data-tools-menu-item" id="btn-reset-demo-db" role="menuitem">
+              <span class="menu-item-icon">🔄</span>
+              <span>Reset demo dataset</span>
+            </button>
+            <button type="button" class="data-tools-menu-item" id="btn-export-session" role="menuitem">
+              <span class="menu-item-icon">💾</span>
+              <span>Export Session JSON</span>
+            </button>
+            <button type="button" class="data-tools-menu-item" id="btn-import-session" role="menuitem">
+              <span class="menu-item-icon">📂</span>
+              <span>Import Session JSON</span>
+            </button>
+            <button type="button" class="data-tools-menu-item" id="btn-export-db-file" role="menuitem">
+              <span class="menu-item-icon">🗄️</span>
+              <span>Export SQLite DB</span>
+            </button>
+          </div>
+        </div>
         <input type="file" id="input-import-session" accept=".json" style="display: none;" />
-        <button type="button" class="btn btn-subtle btn-sm" id="btn-export-db-file" title="Export SQLite database as JSON">Export DB</button>
       </div>
     </div>
   </header>

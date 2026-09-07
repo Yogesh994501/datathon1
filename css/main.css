@@ -192,36 +192,59 @@ select:focus-visible,
 }
 
 .header-inner {
-  max-width: 1440px;
+  max-width: 1540px;
   margin: 0 auto;
-  padding: 0.85rem 1.5rem;
+  padding: 0.65rem 1.5rem;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 1.5rem;
-  flex-wrap: wrap;
+  gap: 1rem;
+  flex-wrap: nowrap;
 }
 
 .brand-group {
   display: flex;
   align-items: center;
-  gap: 1.25rem;
+  gap: 1rem;
+  flex-shrink: 0;
 }
 
 .brand-title {
-  font-size: 1.18rem;
+  font-size: 1.15rem;
   font-weight: 600;
   color: var(--color-text);
   display: flex;
-  align-items: baseline;
-  gap: 0.45rem;
+  align-items: center;
+  gap: 0.55rem;
   text-decoration: none;
 }
 
+.brand-badge-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 7px;
+  background: linear-gradient(135deg, #00F2FE 0%, #0891b2 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 12px rgba(0, 242, 254, 0.45);
+  flex-shrink: 0;
+}
+
+.brand-name-text {
+  font-family: var(--font-heading);
+  font-weight: 700;
+  font-size: 1.12rem;
+  letter-spacing: -0.02em;
+  color: #FFFFFF;
+}
+
 .brand-subtitle {
-  font-size: 0.8rem;
-  font-weight: 400;
+  font-size: 0.76rem;
+  font-weight: 500;
   color: var(--color-text-muted);
+  border-left: 1px solid rgba(255, 255, 255, 0.12);
+  padding-left: 0.55rem;
 }
 
 /* Domain Selector Glass Filter Bar */
@@ -321,8 +344,8 @@ select:focus-visible,
 .header-search-container {
   position: relative;
   flex: 1;
-  max-width: 460px;
-  min-width: 240px;
+  max-width: 380px;
+  min-width: 200px;
 }
 
 .header-search-wrapper {
@@ -504,6 +527,129 @@ select:focus-visible,
   text-align: center;
   color: var(--color-text-muted);
   font-size: 0.82rem;
+}
+
+/* ==========================================================================
+   HEADER ACTIONS & DATA TOOLS DROPDOWN
+   ========================================================================== */
+.header-actions-group {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  flex-shrink: 0;
+}
+
+.header-status-pill {
+  font-size: 0.74rem;
+  padding: 0.28rem 0.65rem;
+  white-space: nowrap;
+}
+
+.btn-header-simulator {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.35rem 0.75rem;
+  border-radius: 9px;
+  background: rgba(0, 242, 254, 0.12);
+  border: 1px solid rgba(0, 242, 254, 0.38);
+  color: #FFFFFF;
+  font-size: 0.78rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 0.2s ease;
+  box-shadow: 0 0 14px rgba(0, 242, 254, 0.22);
+  white-space: nowrap;
+}
+
+.btn-header-simulator:hover {
+  background: rgba(0, 242, 254, 0.24);
+  border-color: #00F2FE;
+  box-shadow: 0 0 18px rgba(0, 242, 254, 0.5);
+  transform: translateY(-1px);
+}
+
+.sim-btn-arrow {
+  color: #00F2FE;
+  font-size: 0.85rem;
+}
+
+/* Data Tools Dropdown */
+.data-tools-dropdown {
+  position: relative;
+}
+
+.data-tools-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.76rem;
+  padding: 0.32rem 0.65rem;
+  white-space: nowrap;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  color: var(--color-text);
+  cursor: pointer;
+}
+
+.data-tools-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.2);
+  color: #FFFFFF;
+}
+
+.dropdown-caret {
+  font-size: 0.7rem;
+  color: var(--color-text-muted);
+}
+
+.data-tools-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  width: 210px;
+  background: rgba(18, 22, 32, 0.96);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  box-shadow: 0 14px 36px rgba(0, 0, 0, 0.5);
+  padding: 0.4rem;
+  display: none;
+  flex-direction: column;
+  gap: 2px;
+  z-index: 100;
+}
+
+.data-tools-menu.active {
+  display: flex;
+}
+
+.data-tools-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  width: 100%;
+  padding: 0.48rem 0.65rem;
+  border-radius: 6px;
+  background: transparent;
+  border: none;
+  color: var(--color-text);
+  font-size: 0.78rem;
+  font-family: var(--font-ui);
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.data-tools-menu-item:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #FFFFFF;
+}
+
+.data-tools-menu-item .menu-item-icon {
+  font-size: 0.95rem;
 }
 
 /* ==========================================================================
