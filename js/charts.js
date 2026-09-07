@@ -54,12 +54,17 @@ const Charts = {
       }
     });
 
+    // Theme-reactive high contrast colors
+    const isLight = document.documentElement.getAttribute('data-theme') === 'light';
+    const axisTickColor = isLight ? '#1E293B' : '#94A3B8';
+    const gridLineColor = isLight ? 'rgba(0, 0, 0, 0.14)' : 'rgba(255, 255, 255, 0.10)';
+
     // Hairline grid rows
     const yGridLines = [25, 50, 75, 100].map(val => {
       const y = getY(val);
       return `
-        <line x1="${padding.left}" y1="${y}" x2="${width - padding.right}" y2="${y}" stroke="#2A2F3B" stroke-width="1" stroke-dasharray="3,3" />
-        <text x="${padding.left - 8}" y="${y + 4}" fill="#636D7E" font-size="11" text-anchor="end" font-family="var(--font-ui)">${val}%</text>
+        <line x1="${padding.left}" y1="${y}" x2="${width - padding.right}" y2="${y}" class="chart-grid-line" stroke="${gridLineColor}" stroke-width="1" stroke-dasharray="3,3" />
+        <text x="${padding.left - 8}" y="${y + 4}" class="chart-axis-tick" fill="${axisTickColor}" font-size="11" font-weight="700" font-family="var(--font-ui)" text-anchor="end">${val}%</text>
       `;
     }).join('');
 
@@ -83,8 +88,9 @@ const Charts = {
     const xLabels = points.map((p, idx) => {
       const x = getX(idx);
       const isFore = p.isForecast;
+      const xLabelColor = isFore ? 'var(--color-accent)' : axisTickColor;
       return `
-        <text x="${x}" y="${height - 10}" fill="${isFore ? '#D9A441' : '#9BA3AF'}" font-size="11" text-anchor="middle" font-weight="${isFore ? '600' : '400'}" font-family="var(--font-ui)">
+        <text x="${x}" y="${height - 10}" class="${isFore ? 'chart-axis-title' : 'chart-axis-tick'}" fill="${xLabelColor}" font-size="11" font-weight="${isFore ? '700' : '600'}" font-family="var(--font-ui)" text-anchor="middle">
           ${p.label}
         </text>
       `;
@@ -103,6 +109,13 @@ const Charts = {
     }).join('');
 
     const nowX = getX(splitIdx);
+    const legend = `
+      <g opacity="0.85">
+        <line x1="${nowX}" y1="${padding.top}" x2="${nowX}" y2="${height - padding.bottom}" stroke="var(--color-accent)" stroke-width="1.5" stroke-dasharray="4,4" opacity="0.6" />
+        <text x="${nowX - 8}" y="${padding.top + 12}" class="trend-legend-hist" fill="#6B8F8A" font-size="10" text-anchor="end" font-family="var(--font-ui)">Historical records</text>
+        <text x="${nowX + 8}" y="${padding.top + 12}" class="trend-legend-fore" fill="#D9A441" font-size="10" text-anchor="start" font-family="var(--font-ui)">AI forecast horizon (95% CI)</text>
+      </g>
+    `;
 
     const svg = `
       <svg viewBox="0 0 ${width} ${height}" style="width: 100%; height: auto; display: block;" role="img" aria-label="Prediction trend forecast with 95% confidence bounds">
@@ -114,9 +127,7 @@ const Charts = {
         ${ciBand}
 
         <!-- Historical / Forecast boundary divider -->
-        <line x1="${nowX}" y1="${padding.top}" x2="${nowX}" y2="${height - padding.bottom}" stroke="#373E4D" stroke-width="1" stroke-dasharray="4,4" />
-        <text x="${nowX - 8}" y="${padding.top + 12}" fill="#6B8F8A" font-size="10" text-anchor="end" font-family="var(--font-ui)">Historical records</text>
-        <text x="${nowX + 8}" y="${padding.top + 12}" fill="#D9A441" font-size="10" text-anchor="start" font-family="var(--font-ui)">AI forecast horizon (95% CI)</text>
+        ${legend}
 
         <!-- Historical Path (teal-grey) -->
         <path d="${histPath}" fill="none" stroke="#6B8F8A" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
@@ -186,6 +197,13 @@ const Charts = {
       list = list.filter(p => p.risk_tier === activeFilter);
     }
 
+    // Theme-reactive high contrast colors (instant daylight/night mode adaptation)
+    const isLight = document.documentElement.getAttribute('data-theme') === 'light';
+    const axisTextColor = isLight ? '#0F172A' : '#EDEAE3';
+    const axisTickColor = isLight ? '#1E293B' : '#94A3B8';
+    const gridLineColor = isLight ? 'rgba(0, 0, 0, 0.14)' : 'rgba(255, 255, 255, 0.10)';
+    const frameRectColor = isLight ? '#64748B' : 'rgba(255, 255, 255, 0.20)';
+
     // Scale mappings
     // Probability: 0 to 100
     const getX = (prob) => margin.left + (Math.max(0, Math.min(100, prob)) / 100) * chartW;
@@ -211,8 +229,8 @@ const Charts = {
     const yGrid = [70, 80, 90, 100].map(c => {
       const y = getY(c);
       return `
-        <line x1="${margin.left}" y1="${y}" x2="${margin.left + chartW}" y2="${y}" stroke="rgba(255, 255, 255, 0.08)" stroke-width="1" stroke-dasharray="2,3" />
-        <text x="${margin.left - 12}" y="${y + 4}" fill="rgba(237, 234, 227, 0.5)" font-size="11" text-anchor="end" font-family="var(--font-ui)">${c}%</text>
+        <line x1="${margin.left}" y1="${y}" x2="${margin.left + chartW}" y2="${y}" class="chart-grid-line" stroke="${gridLineColor}" stroke-width="1" stroke-dasharray="2,3" />
+        <text x="${margin.left - 12}" y="${y + 4}" class="chart-axis-tick" fill="${axisTickColor}" font-size="11.5" font-weight="700" font-family="var(--font-ui)" text-anchor="end">${c}%</text>
       `;
     }).join('');
 
@@ -220,9 +238,9 @@ const Charts = {
     const xGrid = [0, 25, 50, 75, 100].map(p => {
       const x = getX(p);
       return `
-        <line x1="${x}" y1="${margin.top}" x2="${x}" y2="${margin.top + chartH}" stroke="rgba(255, 255, 255, 0.05)" stroke-width="1" stroke-dasharray="2,3" />
-        <line x1="${x}" y1="${margin.top + chartH}" x2="${x}" y2="${margin.top + chartH + 6}" stroke="rgba(255, 255, 255, 0.2)" stroke-width="1" />
-        <text x="${x}" y="${margin.top + chartH + 22}" fill="rgba(237, 234, 227, 0.5)" font-size="11" text-anchor="middle" font-family="var(--font-ui)">${p}%</text>
+        <line x1="${x}" y1="${margin.top}" x2="${x}" y2="${margin.top + chartH}" class="chart-grid-line" stroke="${gridLineColor}" stroke-width="1" stroke-dasharray="2,3" />
+        <line x1="${x}" y1="${margin.top + chartH}" x2="${x}" y2="${margin.top + chartH + 6}" class="chart-grid-line" stroke="${gridLineColor}" stroke-width="1.5" />
+        <text x="${x}" y="${margin.top + chartH + 22}" class="chart-axis-tick" fill="${axisTickColor}" font-size="11.5" font-weight="700" font-family="var(--font-ui)" text-anchor="middle">${p}%</text>
       `;
     }).join('');
 
@@ -255,7 +273,7 @@ const Charts = {
       <svg viewBox="0 0 ${width} ${height}" style="width: 100%; height: auto; display: block; overflow: visible;" role="img" aria-label="Risk Radar cohort distribution scatter plot showing ${list.length} records">
         <desc>Scatter plot plotting predicted risk probability against model confidence with risk tier zones</desc>
         <!-- Boundary Rect -->
-        <rect x="${margin.left}" y="${margin.top}" width="${chartW}" height="${chartH}" fill="none" stroke="rgba(255, 255, 255, 0.08)" stroke-width="1" rx="4" />
+        <rect x="${margin.left}" y="${margin.top}" width="${chartW}" height="${chartH}" fill="none" class="chart-frame-rect" stroke="${frameRectColor}" stroke-width="1.4" rx="4" />
 
         <!-- Translucent Risk Zones -->
         ${zoneRects}
@@ -265,19 +283,19 @@ const Charts = {
         ${xGrid}
 
         <!-- Threshold vertical divider lines -->
-        <line x1="${lowBoundaryX}" y1="${margin.top}" x2="${lowBoundaryX}" y2="${margin.top + chartH}" stroke="#6B8F8A" stroke-width="1" stroke-dasharray="3,3" opacity="0.6" />
-        <line x1="${highBoundaryX}" y1="${margin.top}" x2="${highBoundaryX}" y2="${margin.top + chartH}" stroke="#D9A441" stroke-width="1" stroke-dasharray="3,3" opacity="0.6" />
+        <line x1="${lowBoundaryX}" y1="${margin.top}" x2="${lowBoundaryX}" y2="${margin.top + chartH}" stroke="#6B8F8A" stroke-width="1" stroke-dasharray="3,3" opacity="0.7" />
+        <line x1="${highBoundaryX}" y1="${margin.top}" x2="${highBoundaryX}" y2="${margin.top + chartH}" stroke="#D9A441" stroke-width="1" stroke-dasharray="3,3" opacity="0.7" />
 
         <!-- Zone Labels -->
-        <text x="${(margin.left + lowBoundaryX) / 2}" y="${margin.top + 18}" fill="#6B8F8A" font-size="10" text-anchor="middle" font-family="var(--font-ui)" letter-spacing="0.05em">LOW RISK</text>
-        <text x="${(lowBoundaryX + highBoundaryX) / 2}" y="${margin.top + 18}" fill="#C28B36" font-size="10" text-anchor="middle" font-family="var(--font-ui)" letter-spacing="0.05em">MEDIUM RISK</text>
-        <text x="${(highBoundaryX + margin.left + chartW) / 2}" y="${margin.top + 18}" fill="#D9A441" font-size="10" text-anchor="middle" font-family="var(--font-ui)" letter-spacing="0.05em">HIGH RISK</text>
+        <text x="${(margin.left + lowBoundaryX) / 2}" y="${margin.top + 18}" class="zone-label-low" font-size="10.5" font-weight="700" text-anchor="middle" font-family="var(--font-ui)" letter-spacing="0.06em">LOW RISK</text>
+        <text x="${(lowBoundaryX + highBoundaryX) / 2}" y="${margin.top + 18}" class="zone-label-medium" font-size="10.5" font-weight="700" text-anchor="middle" font-family="var(--font-ui)" letter-spacing="0.06em">MEDIUM RISK</text>
+        <text x="${(highBoundaryX + margin.left + chartW) / 2}" y="${margin.top + 18}" class="zone-label-high" font-size="10.5" font-weight="700" text-anchor="middle" font-family="var(--font-ui)" letter-spacing="0.06em">HIGH RISK</text>
 
         <!-- Y-Axis Label inside bounds -->
-        <text x="18" y="${margin.top + chartH / 2}" fill="rgba(237, 234, 227, 0.6)" font-size="10" text-anchor="middle" font-family="var(--font-ui)" transform="rotate(-90 18 ${margin.top + chartH / 2})" letter-spacing="0.04em">MODEL CONFIDENCE</text>
+        <text x="18" y="${margin.top + chartH / 2}" class="chart-axis-title" fill="${axisTextColor}" font-size="11.5" font-weight="800" letter-spacing="0.08em" font-family="var(--font-ui)" text-anchor="middle" transform="rotate(-90 18 ${margin.top + chartH / 2})">MODEL CONFIDENCE</text>
 
         <!-- X-Axis Label inside coordinate space -->
-        <text x="${margin.left + chartH / 2 + (chartW - chartH) / 2}" y="${height - 14}" fill="rgba(237, 234, 227, 0.6)" font-size="10" text-anchor="middle" font-family="var(--font-ui)" letter-spacing="0.04em">PREDICTED RISK PROBABILITY</text>
+        <text x="${margin.left + chartW / 2}" y="${height - 14}" class="chart-axis-title" fill="${axisTextColor}" font-size="11.5" font-weight="800" letter-spacing="0.08em" font-family="var(--font-ui)" text-anchor="middle">PREDICTED RISK PROBABILITY</text>
 
         <!-- Cohort Points -->
         <g id="radar-svg-points">
@@ -310,6 +328,11 @@ const Charts = {
     const aucVal = activeModel ? (activeModel.auc > 1 ? (activeModel.auc / 100).toFixed(3) : activeModel.auc.toFixed(3)) : '0.839';
 
     if (rocEl) {
+      const isLight = document.documentElement.getAttribute('data-theme') === 'light';
+      const axisTextColor = isLight ? '#0F172A' : '#EDEAE3';
+      const axisTickColor = isLight ? '#1E293B' : '#94A3B8';
+      const frameRectColor = isLight ? '#64748B' : 'rgba(255, 255, 255, 0.20)';
+
       let rocPathD = '';
       if (hasRealRoc) {
         // Map 0..1 FPR to 35..295, 0..1 TPR to 185..15
@@ -326,17 +349,17 @@ const Charts = {
       rocEl.innerHTML = `
         <svg viewBox="0 0 320 220" style="width: 100%; height: auto;" role="img" aria-label="Receiver Operating Characteristic (ROC) curve with AUC ${aucVal}">
           <desc>ROC curve showing true positive rate versus false positive rate for the model evaluation.</desc>
-          <rect x="35" y="15" width="260" height="170" fill="transparent" stroke="#2A2F3B" stroke-width="1" />
+          <rect x="35" y="15" width="260" height="170" fill="transparent" class="chart-frame-rect" stroke="${frameRectColor}" stroke-width="1.2" />
           <!-- Diagonal random baseline -->
-          <line x1="35" y1="185" x2="295" y2="15" stroke="#373E4D" stroke-dasharray="3,3" stroke-width="1" />
+          <line x1="35" y1="185" x2="295" y2="15" class="chart-grid-line" stroke="${frameRectColor}" stroke-dasharray="3,3" stroke-width="1" />
           <!-- ROC curve -->
           <path d="${rocPathD}" fill="none" stroke="#D9A441" stroke-width="2.2" stroke-linejoin="round" />
           <!-- Area fill subtle -->
           <path d="${rocPathD} L 295 185 Z" fill="rgba(217, 164, 65, 0.08)" />
           
-          <text x="165" y="115" fill="#EDEAE3" font-size="12" font-family="var(--font-serif)">AUC = ${aucVal}</text>
-          <text x="165" y="212" fill="#636D7E" font-size="10" text-anchor="middle" font-family="var(--font-ui)">False alarms rate</text>
-          <text x="15" y="100" fill="#636D7E" font-size="10" text-anchor="middle" font-family="var(--font-ui)" transform="rotate(-90 15 100)">Correctly caught rate</text>
+          <text x="165" y="115" class="chart-auc-text" fill="${axisTextColor}" font-size="12" font-weight="700" font-family="var(--font-serif)">AUC = ${aucVal}</text>
+          <text x="165" y="212" class="chart-axis-title" fill="${axisTextColor}" font-size="10.5" font-weight="700" text-anchor="middle" font-family="var(--font-ui)">False alarms rate</text>
+          <text x="15" y="100" class="chart-axis-title" fill="${axisTextColor}" font-size="10.5" font-weight="700" text-anchor="middle" font-family="var(--font-ui)" transform="rotate(-90 15 100)">Correctly caught rate</text>
         </svg>
       `;
     }

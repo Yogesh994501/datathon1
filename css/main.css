@@ -946,6 +946,42 @@ select:focus-visible,
   width: 100%;
 }
 
+/* SVG Chart Axes, Ticks, Titles & Gridlines */
+.chart-axis-tick {
+  fill: #94A3B8;
+  font-size: 11px;
+  font-weight: 500;
+  font-family: var(--font-ui);
+  user-select: none;
+}
+
+.chart-axis-title {
+  fill: #E2E8F0;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  font-family: var(--font-ui);
+  user-select: none;
+}
+
+.chart-grid-line {
+  stroke: rgba(255, 255, 255, 0.12);
+}
+
+.chart-frame-rect {
+  stroke: rgba(255, 255, 255, 0.18);
+}
+
+.chart-auc-text {
+  fill: #EDEAE3;
+  font-weight: 600;
+}
+
+.zone-label-low { fill: #6B8F8A; font-weight: 600; font-size: 10.5px; }
+.zone-label-medium { fill: #C28B36; font-weight: 600; font-size: 10.5px; }
+.zone-label-high { fill: #D9A441; font-weight: 600; font-size: 10.5px; }
+
+
 /* Risk Radar Filter Buttons */
 .radar-filter-btn {
   background: rgba(255, 255, 255, 0.02);
@@ -2408,6 +2444,52 @@ input[type="range"].briefing-slider::-moz-range-thumb {
   background: #E2E8F0;
 }
 
+[data-theme="light"] .search-results-dropdown {
+  background: #FFFFFF !important;
+  border: 1px solid var(--color-line) !important;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.12) !important;
+}
+
+[data-theme="light"] .search-category-title {
+  color: #64748B !important;
+  font-weight: 700 !important;
+}
+
+[data-theme="light"] .search-result-item {
+  color: #0F172A !important;
+}
+
+[data-theme="light"] .search-result-item:hover,
+[data-theme="light"] .search-result-item.focused {
+  background: #F1F5F9 !important;
+  color: #0F172A !important;
+}
+
+[data-theme="light"] .search-item-title {
+  color: #0F172A !important;
+  font-weight: 600 !important;
+}
+
+[data-theme="light"] .search-result-item:hover .search-item-title,
+[data-theme="light"] .search-result-item.focused .search-item-title {
+  color: var(--color-accent) !important;
+}
+
+[data-theme="light"] .search-item-desc {
+  color: #475569 !important;
+}
+
+[data-theme="light"] .search-item-badge {
+  background: #E2E8F0 !important;
+  border: 1px solid #CBD5E1 !important;
+  color: #334155 !important;
+  font-weight: 500 !important;
+}
+
+[data-theme="light"] .search-no-results {
+  color: #64748B !important;
+}
+
 [data-theme="light"] .data-tools-menu {
   background: #FFFFFF;
   border: 1px solid var(--color-line);
@@ -2460,5 +2542,67 @@ input[type="range"].briefing-slider::-moz-range-thumb {
 [data-theme="light"] #signal-canvas {
   opacity: 0.15;
 }
+
+/* Light Theme Chart Axes, Labels & Grid Lines - High Contrast */
+[data-theme="light"] .chart-axis-tick {
+  fill: #1E293B !important;
+  font-weight: 600 !important;
+  font-size: 11px !important;
+}
+
+[data-theme="light"] .chart-axis-title {
+  fill: #0F172A !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.08em !important;
+}
+
+[data-theme="light"] .chart-grid-line {
+  stroke: #94A3B8 !important;
+  stroke-opacity: 0.45 !important;
+}
+
+[data-theme="light"] .chart-frame-rect {
+  stroke: #64748B !important;
+  stroke-opacity: 0.6 !important;
+}
+
+[data-theme="light"] .chart-auc-text {
+  fill: #0F172A !important;
+  font-weight: 700 !important;
+}
+
+[data-theme="light"] .zone-label-low {
+  fill: #0D9488 !important;
+  font-weight: 700 !important;
+}
+
+[data-theme="light"] .zone-label-medium {
+  fill: #B45309 !important;
+  font-weight: 700 !important;
+}
+
+[data-theme="light"] .zone-label-high {
+  fill: #D97706 !important;
+  font-weight: 700 !important;
+}
+
+[data-theme="light"] .radar-filter-btn {
+  background: #F1F5F9;
+  border-color: var(--color-line);
+  color: var(--color-text-muted);
+}
+
+[data-theme="light"] .radar-filter-btn:hover {
+  background: #E2E8F0;
+  color: var(--color-text);
+  border-color: var(--color-accent);
+}
+
+[data-theme="light"] .radar-filter-btn.active {
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+  color: #FFFFFF;
+}
+
 
 

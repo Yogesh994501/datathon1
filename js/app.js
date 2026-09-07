@@ -343,7 +343,26 @@ function setupThemeSwitcher() {
     if (iconSpan) {
       iconSpan.textContent = nextTheme === 'light' ? '🌙' : '☀️';
     }
-    showToast(`Switched to ${nextTheme === 'light' ? 'Light' : 'Dark'} Mode`, 'info');
+
+    // Instantly re-render charts and canvas to adapt to daylight/night theme
+    try {
+      if (typeof renderRiskRadarSection === 'function' && window.predictiqState) {
+        renderRiskRadarSection(window.predictiqState);
+      }
+      if (typeof renderExecutiveBriefing === 'function' && window.predictiqState) {
+        renderExecutiveBriefing(window.predictiqState);
+      }
+      if (typeof renderModelBenchmark === 'function' && window.predictiqState) {
+        renderModelBenchmark(window.predictiqState);
+      }
+      if (window.Simulator && typeof window.Simulator.drawOutlookChart === 'function') {
+        window.Simulator.drawOutlookChart(window.Simulator.currentState || {});
+      }
+    } catch (e) {
+      console.warn('Theme switch re-render note:', e);
+    }
+
+    showToast(`Switched to ${nextTheme === 'light' ? 'Day' : 'Night'} Mode`, 'info');
   });
 }
 

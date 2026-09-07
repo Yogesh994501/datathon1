@@ -213,11 +213,12 @@ const Simulator = {
     ctx.clearRect(0, 0, w, h);
 
     // 1. Draw Horizontal Gridlines & Y-Axis Labels: 0, 5, 10, 15, 20
+    const isLight = document.documentElement.getAttribute('data-theme') === 'light';
     const yTicks = [20, 15, 10, 5, 0];
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
+    ctx.strokeStyle = isLight ? 'rgba(0, 0, 0, 0.12)' : 'rgba(255, 255, 255, 0.05)';
     ctx.lineWidth = 1 * dpr;
     ctx.font = `${9 * dpr}px 'JetBrains Mono', monospace`;
-    ctx.fillStyle = '#6B7280';
+    ctx.fillStyle = isLight ? '#1E293B' : '#94A3B8';
     ctx.textAlign = 'right';
 
     yTicks.forEach((tick, i) => {
@@ -376,9 +377,9 @@ const Simulator = {
     const legendY = h - 2 * dpr;
     ctx.font = `${9 * dpr}px 'JetBrains Mono', monospace`;
     ctx.textAlign = 'center';
-    ctx.fillStyle = '#00F2FE';
+    ctx.fillStyle = isLight ? '#0284C7' : '#00F2FE';
     ctx.fillText('— Simulated Scenario', w / 2 - 45 * dpr, legendY);
-    ctx.fillStyle = '#9CA3AF';
+    ctx.fillStyle = isLight ? '#475569' : '#9CA3AF';
     ctx.fillText('-- Baseline', w / 2 + 55 * dpr, legendY);
   },
 
