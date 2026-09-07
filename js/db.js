@@ -613,6 +613,18 @@ class RelationalDatabase {
           summary_text: 'Conduct executive business review, deploy customer success onboarding specialist, and offer renewal lock discount.',
           potential_impact: 165000 // $165,000 annual contract value retained
         }
+      ],
+      action_plans: [
+        {
+          id: 'plan_3668',
+          prediction_id: 'pred_ret_3668',
+          assigned_to: 'Account Lead — Retention Taskforce',
+          playbook: 'Term-Contract Migration & 15% Annual Retention Incentive',
+          sla: 'Immediate (Within 24 Hours)',
+          status: 'In Progress',
+          notes: 'High churn probability (77.8%) on month-to-month contract. Offer 1-year agreement transition with fiber bundling.',
+          assigned_at: '2026-09-07 09:15:00'
+        }
       ]
     };
   }
@@ -722,6 +734,23 @@ class RelationalDatabase {
   getRecommendationForPrediction(predictionId) {
     const res = this.query(`SELECT * FROM recommendations WHERE prediction_id = '${predictionId}' LIMIT 1`);
     return res[0] || null;
+  }
+
+  getActionPlanForPrediction(predictionId) {
+    if (!this.tables['action_plans']) this.tables['action_plans'] = [];
+    return this.tables['action_plans'].find(p => p.prediction_id === predictionId) || null;
+  }
+
+  saveActionPlan(plan) {
+    if (!this.tables['action_plans']) this.tables['action_plans'] = [];
+    const idx = this.tables['action_plans'].findIndex(p => p.prediction_id === plan.prediction_id);
+    if (idx >= 0) {
+      this.tables['action_plans'][idx] = { ...this.tables['action_plans'][idx], ...plan };
+    } else {
+      this.tables['action_plans'].push(plan);
+    }
+    this.persist();
+    return plan;
   }
 
   // Export database as JSON / SQL file

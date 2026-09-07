@@ -390,16 +390,48 @@ function renderExecutiveMemoSection(config, activeModel) {
   if (impactEl) impactEl.textContent = config.impactDisplay;
 }
 
+// Global Toast Notification Helper
+function showToast(message, type = 'info') {
+  const container = document.getElementById('toast-container');
+  if (!container) return;
+
+  const toast = document.createElement('div');
+  toast.className = `toast toast-${type}`;
+  toast.setAttribute('role', 'status');
+  toast.innerHTML = `
+    <span class="toast-icon">${type === 'success' ? '✓' : 'ℹ'}</span>
+    <span>${message}</span>
+  `;
+  container.appendChild(toast);
+
+  requestAnimationFrame(() => {
+    toast.classList.add('show');
+  });
+
+  setTimeout(() => {
+    toast.classList.remove('show');
+    setTimeout(() => {
+      if (toast.parentNode) toast.parentNode.removeChild(toast);
+    }, 300);
+  }, 3500);
+}
+window.showToast = showToast;
+
 function openRecordInspector(recordId) {
   const db = window.predictiqDb;
   const predictions = db.query(`SELECT * FROM predictions WHERE id = '${recordId}' LIMIT 1`);
   if (!predictions.length) return;
   const rec = predictions[0];
   const recommendation = db.getRecommendationForPrediction(recordId);
+  const actionPlan = db.getActionPlanForPrediction ? db.getActionPlanForPrediction(recordId) : null;
+  const jsonPayload = window.Reports ? window.Reports.getRecordJSONPayload(recordId) : null;
+  const jsonStr = jsonPayload ? JSON.stringify(jsonPayload, null, 2) : '';
 
   const drawer = document.getElementById('inspector-drawer-panel');
   const overlay = document.getElementById('inspector-overlay');
   if (!drawer || !overlay) return;
+
+  const isCompleted = actionPlan && actionPlan.status === 'Completed';
 
   drawer.innerHTML = `
     <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.5rem; border-bottom: var(--border-hairline); padding-bottom: 1rem;">
@@ -407,9 +439,10 @@ function openRecordInspector(recordId) {
         <div style="font-size: 0.8rem; color: var(--color-text-muted);">Record details</div>
         <h2 style="font-size: 1.4rem; margin-top: 0.2rem;">${rec.record_ref}</h2>
       </div>
-      <button type="button" class="btn btn-subtle btn-sm" id="btn-close-drawer">Close</button>
+      <button type="button" class="btn btn-subtle btn-sm" id="btn-close-drawer" aria-label="Close record details dialog">Close</button>
     </div>
 
+    <!-- Outcome metric -->
     <div style="margin-bottom: 1.5rem;">
       <div style="font-size: 0.8rem; color: var(--color-text-muted);">Assessed outcome</div>
       <div class="figure-serif figure-card" style="color: ${rec.risk_tier === 'high' ? 'var(--color-accent)' : 'var(--color-text)'}; margin: 0.35rem 0;">
@@ -420,6 +453,7 @@ function openRecordInspector(recordId) {
       </span>
     </div>
 
+    <!-- Prescribed action memo -->
     <div class="memo-card" style="margin-bottom: 1.5rem;">
       <h4 style="margin-bottom: 0.5rem;">Prescribed action memo</h4>
       <p class="body-copy" style="font-size: 0.88rem; line-height: 1.5; color: var(--color-text);">
@@ -434,24 +468,274 @@ function openRecordInspector(recordId) {
       ` : ''}
     </div>
 
-    <div style="margin-top: 2rem; display: flex; gap: 0.5rem;">
-      <button type="button" class="btn btn-primary" onclick="alert('Notification dispatched to account lead.')">Assign action plan</button>
-      <button type="button" class="btn btn-subtle" onclick="window.Reports.exportPredictionsJSON()">Export record JSON</button>
+    <!-- Action Plan Active Card -->
+    ${actionPlan ? `
+      <div class="action-plan-card" id="action-plan-display-card">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+          <h4 style="color: var(--color-accent); font-size: 0.95rem; margin: 0;">Action plan status</h4>
+          <span class="badge ${isCompleted ? 'badge-low' : 'badge-high'}" style="font-size: 0.75rem;">
+            ${isCompleted ? '✓ Executed & Completed' : '● ' + actionPlan.status}
+          </span>
+        </div>
+        
+        <div style="font-size: 0.84rem; line-height: 1.6; margin-bottom: 0.85rem;">
+          <div><strong style="color: var(--color-text-muted);">Assignee:</strong> ${actionPlan.assigned_to}</div>
+          <div><strong style="color: var(--color-text-muted);">Playbook:</strong> ${actionPlan.playbook}</div>
+          <div><strong style="color: var(--color-text-muted);">Target SLA:</strong> ${actionPlan.sla}</div>
+          <div><strong style="color: var(--color-text-muted);">Assigned At:</strong> ${actionPlan.assigned_at}</div>
+          ${actionPlan.notes ? `<div style="margin-top: 0.4rem; padding: 0.5rem 0.65rem; background: rgba(0,0,0,0.25); border-radius: 8px; font-size: 0.8rem; color: var(--color-text);">${actionPlan.notes}</div>` : ''}
+        </div>
+
+        <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+          <button type="button" class="btn btn-subtle btn-sm" id="btn-edit-action-plan" aria-label="Edit assigned action plan">Edit Plan</button>
+          <button type="button" class="btn ${isCompleted ? 'btn-subtle' : 'btn-primary'} btn-sm" id="btn-toggle-plan-complete" aria-label="Toggle action plan status">
+            ${isCompleted ? 'Reopen Plan' : 'Mark as Completed'}
+          </button>
+        </div>
+      </div>
+    ` : ''}
+
+    <!-- Action Plan Interactive Assignment Form -->
+    <div class="action-plan-form" id="action-plan-form" style="${actionPlan ? 'display: none;' : 'display: none;'}">
+      <h4 style="margin-bottom: 0.85rem; color: var(--color-accent);">Assign operational action plan</h4>
+      
+      <label for="plan-assignee-select">Assignee / Owner</label>
+      <select id="plan-assignee-select">
+        <option value="Account Lead — Retention Taskforce">Account Lead — Retention Taskforce</option>
+        <option value="Senior Customer Success Specialist">Senior Customer Success Specialist</option>
+        <option value="VIP Escalations & Onboarding Manager">VIP Escalations & Onboarding Manager</option>
+        <option value="Risk Operations Lead">Risk Operations Lead</option>
+      </select>
+
+      <label for="plan-playbook-select">Prescribed Playbook</label>
+      <select id="plan-playbook-select">
+        <option value="Term-Contract Migration & 15% Annual Retention Incentive">Term-Contract Migration & 15% Annual Retention Incentive</option>
+        <option value="Executive Business Review & Usage Health Check">Executive Business Review & Usage Health Check</option>
+        <option value="Dedicated Onboarding & Priority Support Intervention">Dedicated Onboarding & Priority Support Intervention</option>
+        <option value="Custom Commercial Pricing Restructure Offer">Custom Commercial Pricing Restructure Offer</option>
+      </select>
+
+      <label for="plan-sla-select">Target SLA / Turnaround</label>
+      <select id="plan-sla-select">
+        <option value="Immediate (Within 24 Hours)">Immediate (Within 24 Hours)</option>
+        <option value="High Priority (3 Business Days)">High Priority (3 Business Days)</option>
+        <option value="Standard Follow-up (7 Days)">Standard Follow-up (7 Days)</option>
+      </select>
+
+      <label for="plan-notes-input">Intervention Notes</label>
+      <textarea id="plan-notes-input" placeholder="Enter execution guidance for the assigned account lead...">${actionPlan ? actionPlan.notes : 'High probability churn alert on month-to-month tenure. Deploy term contract migration protocol.'}</textarea>
+
+      <div style="display: flex; gap: 0.5rem; margin-top: 0.5rem;">
+        <button type="button" class="btn btn-primary btn-sm" id="btn-submit-action-plan">Confirm Assignment</button>
+        <button type="button" class="btn btn-subtle btn-sm" id="btn-cancel-action-plan">Cancel</button>
+      </div>
+    </div>
+
+    <!-- Primary Action Buttons -->
+    <div id="inspector-action-buttons" style="margin-top: 1.5rem; display: flex; flex-direction: column; gap: 0.75rem;">
+      <div style="display: flex; gap: 0.65rem; flex-wrap: wrap;">
+        ${!actionPlan ? `
+          <button type="button" class="btn btn-primary" id="btn-open-assign-form" aria-label="Assign an operational action plan">
+            Assign action plan
+          </button>
+        ` : ''}
+        <button type="button" class="btn ${actionPlan ? 'btn-primary' : 'btn-subtle'}" id="btn-export-record-json" aria-label="Export and download record JSON for ${rec.record_ref}">
+          Export record JSON
+        </button>
+        <button type="button" class="btn btn-subtle" id="btn-toggle-json-viewer" aria-expanded="false" aria-controls="record-json-preview" aria-label="Toggle accessible JSON viewer">
+          View JSON payload
+        </button>
+      </div>
+    </div>
+
+    <!-- Accessible Collapsible JSON Payload Viewer -->
+    <div class="json-viewer-container" id="record-json-preview" style="display: none;" role="region" aria-label="Raw Record JSON Payload">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+        <span style="font-size: 0.8rem; font-weight: 600; color: var(--color-text);">Record JSON Payload</span>
+        <button type="button" class="btn btn-subtle btn-sm" id="btn-copy-json" aria-label="Copy record JSON string to clipboard">Copy JSON</button>
+      </div>
+      <pre class="json-code-block" tabindex="0" role="region" aria-label="Formatted JSON Document"><code>${jsonStr}</code></pre>
+      <div style="font-size: 0.74rem; color: var(--color-text-faint);">
+        Keyboard accessible • Press Tab to navigate • Formatted ISO-standard decision audit payload.
+      </div>
     </div>
   `;
 
   overlay.classList.add('active');
   drawer.style.display = 'block';
 
-  document.getElementById('btn-close-drawer').addEventListener('click', () => {
-    overlay.classList.remove('active');
-    drawer.style.display = 'none';
-  });
+  // Attach Event Handlers
 
-  overlay.addEventListener('click', () => {
+  // Close Drawer
+  const closeBtn = document.getElementById('btn-close-drawer');
+  const closeDrawer = () => {
     overlay.classList.remove('active');
     drawer.style.display = 'none';
-  });
+  };
+  if (closeBtn) closeBtn.addEventListener('click', closeDrawer);
+  overlay.addEventListener('click', closeDrawer);
+
+  // Escape key accessibility
+  const escHandler = (e) => {
+    if (e.key === 'Escape') {
+      closeDrawer();
+      window.removeEventListener('keydown', escHandler);
+    }
+  };
+  window.addEventListener('keydown', escHandler);
+
+  // Assign action plan button (when no plan exists yet)
+  const openAssignFormBtn = document.getElementById('btn-open-assign-form');
+  const formEl = document.getElementById('action-plan-form');
+  const cancelFormBtn = document.getElementById('btn-cancel-action-plan');
+  const submitFormBtn = document.getElementById('btn-submit-action-plan');
+
+  if (openAssignFormBtn && formEl) {
+    openAssignFormBtn.addEventListener('click', () => {
+      formEl.style.display = 'block';
+      openAssignFormBtn.style.display = 'none';
+      const selectEl = document.getElementById('plan-assignee-select');
+      if (selectEl) selectEl.focus();
+    });
+  }
+
+  // Edit Plan Button
+  const editPlanBtn = document.getElementById('btn-edit-action-plan');
+  const planDisplayCard = document.getElementById('action-plan-display-card');
+  if (editPlanBtn && formEl) {
+    editPlanBtn.addEventListener('click', () => {
+      formEl.style.display = 'block';
+      if (planDisplayCard) planDisplayCard.style.display = 'none';
+      const selectEl = document.getElementById('plan-assignee-select');
+      if (selectEl) selectEl.focus();
+    });
+  }
+
+  // Cancel Form
+  if (cancelFormBtn && formEl) {
+    cancelFormBtn.addEventListener('click', () => {
+      formEl.style.display = 'none';
+      if (openAssignFormBtn) openAssignFormBtn.style.display = 'inline-flex';
+      if (planDisplayCard) planDisplayCard.style.display = 'block';
+    });
+  }
+
+  // Submit Form
+  if (submitFormBtn) {
+    submitFormBtn.addEventListener('click', () => {
+      const assignee = document.getElementById('plan-assignee-select').value;
+      const playbook = document.getElementById('plan-playbook-select').value;
+      const sla = document.getElementById('plan-sla-select').value;
+      const notes = document.getElementById('plan-notes-input').value;
+
+      const newPlan = {
+        id: 'plan_' + recordId.replace(/[^a-zA-Z0-9_-]/g, '_'),
+        prediction_id: recordId,
+        assigned_to: assignee,
+        playbook: playbook,
+        sla: sla,
+        status: 'In Progress',
+        notes: notes,
+        assigned_at: new Date().toLocaleString()
+      };
+
+      if (db.saveActionPlan) {
+        db.saveActionPlan(newPlan);
+      }
+
+      showToast(`Action plan assigned to ${assignee}.`, 'success');
+      openRecordInspector(recordId);
+      if (window.renderRiskRadarSection && window.predictiqState) {
+        window.renderRiskRadarSection(window.predictiqState);
+      }
+    });
+  }
+
+  // Toggle Plan Completion
+  const toggleCompleteBtn = document.getElementById('btn-toggle-plan-complete');
+  if (toggleCompleteBtn && actionPlan) {
+    toggleCompleteBtn.addEventListener('click', () => {
+      const nextStatus = actionPlan.status === 'Completed' ? 'In Progress' : 'Completed';
+      const updatedPlan = {
+        ...actionPlan,
+        status: nextStatus,
+        completed_at: nextStatus === 'Completed' ? new Date().toLocaleString() : null
+      };
+
+      if (db.saveActionPlan) {
+        db.saveActionPlan(updatedPlan);
+      }
+
+      showToast(`Action plan status updated to ${nextStatus}.`, 'success');
+      openRecordInspector(recordId);
+    });
+  }
+
+  // Export Record JSON
+  const exportRecordBtn = document.getElementById('btn-export-record-json');
+  if (exportRecordBtn) {
+    exportRecordBtn.addEventListener('click', () => {
+      if (window.Reports && window.Reports.exportRecordJSON) {
+        window.Reports.exportRecordJSON(recordId);
+      } else if (jsonPayload) {
+        const jsonStrDownload = JSON.stringify(jsonPayload, null, 2);
+        const blob = new Blob([jsonStrDownload], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `predictiq_${rec.record_ref.replace(/[^a-zA-Z0-9_-]/g, '_')}_record.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        showToast(`Exported ${rec.record_ref} JSON file.`, 'success');
+      }
+    });
+  }
+
+  // Toggle Accessible JSON Viewer
+  const toggleJsonBtn = document.getElementById('btn-toggle-json-viewer');
+  const jsonViewerEl = document.getElementById('record-json-preview');
+  if (toggleJsonBtn && jsonViewerEl) {
+    toggleJsonBtn.addEventListener('click', () => {
+      const isHidden = jsonViewerEl.style.display === 'none';
+      jsonViewerEl.style.display = isHidden ? 'block' : 'none';
+      toggleJsonBtn.setAttribute('aria-expanded', isHidden ? 'true' : 'false');
+      toggleJsonBtn.textContent = isHidden ? 'Hide JSON payload' : 'View JSON payload';
+      if (isHidden) {
+        jsonViewerEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
+    });
+  }
+
+  // Copy JSON to Clipboard
+  const copyJsonBtn = document.getElementById('btn-copy-json');
+  if (copyJsonBtn) {
+    copyJsonBtn.addEventListener('click', async () => {
+      try {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          await navigator.clipboard.writeText(jsonStr);
+        } else {
+          // Fallback for non-secure contexts
+          const ta = document.createElement('textarea');
+          ta.value = jsonStr;
+          ta.style.position = 'fixed';
+          ta.style.opacity = '0';
+          document.body.appendChild(ta);
+          ta.select();
+          document.execCommand('copy');
+          document.body.removeChild(ta);
+        }
+        copyJsonBtn.textContent = '✓ Copied!';
+        showToast('Record JSON copied to clipboard.', 'success');
+        setTimeout(() => {
+          copyJsonBtn.textContent = 'Copy JSON';
+        }, 2200);
+      } catch (err) {
+        showToast('Unable to copy to clipboard directly.', 'info');
+      }
+    });
+  }
 }
 
 function setupDatasetUploadStudio(state) {
