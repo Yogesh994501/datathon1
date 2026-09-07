@@ -1,0 +1,1263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>What-If Scenario Simulator — PredictIQ</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Outfit:wght@500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-base: #0B0F19;
+      --card-bg: rgba(17, 24, 39, 0.75);
+      --card-border: 1px solid rgba(255, 255, 255, 0.08);
+      --card-radius: 12px;
+      
+      --accent-cyan: #00F2FE;
+      --accent-cyan-glow: 0 0 16px rgba(0, 242, 254, 0.55);
+      --accent-cyan-subtle: rgba(0, 242, 254, 0.12);
+      
+      --color-emerald: #10B981;
+      --color-emerald-glow: 0 0 14px rgba(16, 185, 129, 0.45);
+      --color-emerald-subtle: rgba(16, 185, 129, 0.15);
+      
+      --color-crimson: #EF4444;
+      --color-crimson-glow: 0 0 14px rgba(239, 68, 68, 0.45);
+      --color-crimson-subtle: rgba(239, 68, 68, 0.15);
+      
+      --text-main: #FFFFFF;
+      --text-dimmed: #94A3B8;
+      --text-muted: #64748B;
+      --text-faint: #475569;
+      
+      --sidebar-width: 220px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    body {
+      background-color: var(--bg-base);
+      color: var(--text-main);
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      overflow-x: hidden;
+      font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+    }
+
+    .tabular-nums {
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* ============================================================
+       SIDEBAR NAVIGATION
+       ============================================================ */
+    .sidebar {
+      width: var(--sidebar-width);
+      min-width: var(--sidebar-width);
+      background: #080C14;
+      border-right: 1px solid rgba(255, 255, 255, 0.06);
+      padding: 24px 16px;
+      display: flex;
+      flex-direction: column;
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      z-index: 10;
+    }
+
+    .brand-logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      text-decoration: none;
+      color: #FFFFFF;
+      padding: 4px 8px 28px 8px;
+    }
+
+    .brand-badge {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      background: linear-gradient(135deg, #00F2FE 0%, #0891b2 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #0B0F19;
+      font-weight: 800;
+      box-shadow: 0 0 14px rgba(0, 242, 254, 0.4);
+    }
+
+    .brand-name {
+      font-size: 19px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: #FFFFFF;
+      font-family: 'Outfit', sans-serif;
+    }
+
+    .nav-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      flex: 1;
+    }
+
+    .nav-item a {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 14px;
+      border-radius: 8px;
+      color: var(--text-dimmed);
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 500;
+      transition: all 0.2s ease;
+      border: 1px solid transparent;
+    }
+
+    .nav-item a svg {
+      width: 18px;
+      height: 18px;
+      stroke-width: 2;
+      opacity: 0.8;
+      transition: all 0.2s ease;
+    }
+
+    .nav-item a:hover {
+      color: #FFFFFF;
+      background: rgba(255, 255, 255, 0.04);
+    }
+
+    .nav-item.active a {
+      background: rgba(0, 242, 254, 0.12);
+      color: #FFFFFF;
+      border: 1px solid rgba(0, 242, 254, 0.25);
+      font-weight: 600;
+    }
+
+    .nav-item.active a svg {
+      color: var(--accent-cyan);
+      opacity: 1;
+      filter: drop-shadow(0 0 6px rgba(0, 242, 254, 0.5));
+    }
+
+    /* ============================================================
+       MAIN CONTENT WORKSPACE
+       ============================================================ */
+    .workspace {
+      flex: 1;
+      padding: 20px 32px;
+      max-width: 1540px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .page-header h1 {
+      font-size: 24px;
+      font-weight: 700;
+      color: #FFFFFF;
+      letter-spacing: -0.02em;
+    }
+
+    .two-column-layout {
+      display: grid;
+      grid-template-columns: 370px 1fr;
+      gap: 20px;
+      align-items: start;
+    }
+
+    .col-title {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-muted);
+      font-weight: 600;
+      margin-bottom: 10px;
+    }
+
+    /* Glassmorphic Card */
+    .glass-card {
+      background: var(--card-bg);
+      border: var(--card-border);
+      border-radius: var(--card-radius);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      box-shadow: 0 12px 36px rgba(0, 0, 0, 0.35);
+      padding: 20px;
+    }
+
+    /* ============================================================
+       LEFT COLUMN: SCENARIO CONTROLS
+       ============================================================ */
+    .controls-card {
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+
+    .group-header {
+      font-size: 14px;
+      font-weight: 600;
+      color: #FFFFFF;
+    }
+
+    .lever-item {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .lever-top-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .lever-name {
+      font-size: 13.5px;
+      font-weight: 500;
+      color: #F1F5F9;
+    }
+
+    .lever-value-tag {
+      font-size: 13.5px;
+      font-weight: 700;
+      color: #FFFFFF;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .lever-subtext {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    /* Custom Electric Cyan Slider */
+    .custom-slider-container {
+      position: relative;
+      margin-top: 2px;
+    }
+
+    .slider-track-wrap {
+      position: relative;
+      width: 100%;
+      height: 20px;
+      display: flex;
+      align-items: center;
+    }
+
+    .slider-input {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 100%;
+      height: 5px;
+      border-radius: 4px;
+      background: #1E293B;
+      outline: none;
+      cursor: pointer;
+      position: relative;
+      z-index: 2;
+    }
+
+    .slider-input::-webkit-slider-runnable-track {
+      height: 5px;
+      border-radius: 4px;
+      background: transparent;
+    }
+
+    .slider-input::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 18px;
+      height: 18px;
+      border-radius: 4px;
+      background: var(--accent-cyan);
+      cursor: pointer;
+      box-shadow: 0 0 12px rgba(0, 242, 254, 0.95), 0 0 20px rgba(0, 242, 254, 0.5);
+      margin-top: -6.5px;
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+      border: 2px solid #FFFFFF;
+    }
+
+    .slider-input::-webkit-slider-thumb:hover {
+      transform: scale(1.15);
+      box-shadow: 0 0 16px rgba(0, 242, 254, 1), 0 0 28px rgba(0, 242, 254, 0.7);
+    }
+
+    .slider-input::-moz-range-thumb {
+      width: 18px;
+      height: 18px;
+      border-radius: 4px;
+      background: var(--accent-cyan);
+      cursor: pointer;
+      box-shadow: 0 0 12px rgba(0, 242, 254, 0.95);
+      border: 2px solid #FFFFFF;
+    }
+
+    .slider-fill {
+      position: absolute;
+      left: 0;
+      top: 7.5px;
+      height: 5px;
+      border-radius: 4px 0 0 4px;
+      background: var(--accent-cyan);
+      box-shadow: 0 0 10px rgba(0, 242, 254, 0.8);
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    .slider-labels {
+      display: flex;
+      justify-content: space-between;
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 2px;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* Toggle Switch */
+    .toggle-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-top: 4px;
+    }
+
+    .toggle-info {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .toggle-info .lever-name {
+      font-size: 14px;
+      font-weight: 500;
+      color: #F1F5F9;
+    }
+
+    .switch-wrap {
+      position: relative;
+      display: inline-block;
+      width: 52px;
+      height: 28px;
+      cursor: pointer;
+    }
+
+    .switch-wrap input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .switch-slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: #1E293B;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      transition: .3s cubic-bezier(0.4, 0, 0.2, 1);
+      border-radius: 28px;
+    }
+
+    .switch-slider:before {
+      position: absolute;
+      content: "";
+      height: 20px;
+      width: 20px;
+      left: 4px;
+      bottom: 3px;
+      background-color: #94A3B8;
+      transition: .3s cubic-bezier(0.4, 0, 0.2, 1);
+      border-radius: 50%;
+    }
+
+    .switch-wrap input:checked + .switch-slider {
+      background: linear-gradient(90deg, #00d2df 0%, #00F2FE 100%);
+      border-color: var(--accent-cyan);
+      box-shadow: 0 0 16px rgba(0, 242, 254, 0.6);
+    }
+
+    .switch-wrap input:checked + .switch-slider:before {
+      transform: translateX(24px);
+      background-color: #FFFFFF;
+      box-shadow: 0 0 8px rgba(0, 0, 0, 0.3);
+    }
+
+    /* Reset Button */
+    .btn-reset {
+      width: 100%;
+      padding: 12px 16px;
+      background: transparent;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 8px;
+      color: #E2E8F0;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      margin-top: 8px;
+    }
+
+    .btn-reset:hover {
+      background: rgba(255, 255, 255, 0.05);
+      border-color: rgba(255, 255, 255, 0.35);
+      color: #FFFFFF;
+    }
+
+    .btn-reset-comment {
+      font-size: 10px;
+      color: var(--text-muted);
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* ============================================================
+       RIGHT COLUMN: LIVE PREDICTION OUTPUT
+       ============================================================ */
+    .output-column {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    /* 3 KPI Cards Row */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+    }
+
+    .kpi-card {
+      padding: 20px 22px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      min-height: 120px;
+    }
+
+    .kpi-title {
+      font-size: 13px;
+      color: var(--text-dimmed);
+      font-weight: 500;
+    }
+
+    .kpi-val-row {
+      display: flex;
+      align-items: baseline;
+      gap: 10px;
+      margin-top: 8px;
+      margin-bottom: 4px;
+    }
+
+    .kpi-value {
+      font-size: 32px;
+      font-weight: 700;
+      color: #FFFFFF;
+      letter-spacing: -0.02em;
+    }
+
+    .delta-chip {
+      font-size: 12px;
+      font-weight: 600;
+      padding: 3px 8px;
+      border-radius: 6px;
+      display: inline-flex;
+      align-items: center;
+      gap: 2px;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .delta-crimson {
+      color: var(--color-crimson);
+      background: var(--color-crimson-subtle);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+    }
+
+    .delta-emerald {
+      color: var(--color-emerald);
+      background: var(--color-emerald-subtle);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+    }
+
+    .kpi-subtext {
+      font-size: 12px;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    /* 12-Month Outlook Chart Card */
+    .chart-card {
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .chart-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .chart-title {
+      font-size: 15px;
+      font-weight: 600;
+      color: #FFFFFF;
+    }
+
+    .chart-canvas-wrap {
+      position: relative;
+      width: 100%;
+      height: 200px;
+    }
+
+    canvas#outlookChart {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    .chart-legend {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 24px;
+      font-size: 12px;
+      color: var(--text-dimmed);
+      margin-top: 4px;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .legend-line-cyan {
+      width: 20px;
+      height: 2px;
+      background: var(--accent-cyan);
+      box-shadow: 0 0 8px rgba(0, 242, 254, 0.8);
+    }
+
+    .legend-line-dashed {
+      width: 20px;
+      height: 2px;
+      border-top: 2px dashed #64748B;
+    }
+
+    /* SHAP Deltas Card */
+    .shap-card {
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      position: relative;
+    }
+
+    .shap-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .shap-title {
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      color: #FFFFFF;
+      text-transform: uppercase;
+    }
+
+    .shap-axis-labels {
+      display: flex;
+      align-items: center;
+      gap: 48px;
+      font-size: 11px;
+      color: var(--text-muted);
+      font-weight: 600;
+      letter-spacing: 0.04em;
+    }
+
+    .star-icon {
+      color: #94A3B8;
+      font-size: 18px;
+      filter: drop-shadow(0 0 6px rgba(255, 255, 255, 0.3));
+    }
+
+    .shap-bars-container {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      margin-top: 8px;
+    }
+
+    .shap-row {
+      display: grid;
+      grid-template-columns: 140px 100px 1fr 70px;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .shap-feature-name {
+      font-size: 13px;
+      color: #E2E8F0;
+      font-weight: 500;
+    }
+
+    .shap-badge {
+      font-size: 11px;
+      font-weight: 600;
+      color: #FFFFFF;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .shap-bar-track {
+      width: 100%;
+      height: 26px;
+      background: rgba(255, 255, 255, 0.02);
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .shap-bar-emerald {
+      height: 100%;
+      background: linear-gradient(90deg, rgba(16, 185, 129, 0.25) 0%, rgba(16, 185, 129, 0.85) 100%);
+      border: 1px solid var(--color-emerald);
+      border-radius: 4px;
+      box-shadow: 0 0 14px rgba(16, 185, 129, 0.4);
+      transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .shap-bar-crimson {
+      height: 100%;
+      background: linear-gradient(90deg, rgba(239, 68, 68, 0.85) 0%, rgba(239, 68, 68, 0.25) 100%);
+      border: 1px solid var(--color-crimson);
+      border-radius: 4px;
+      box-shadow: 0 0 14px rgba(239, 68, 68, 0.4);
+      transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .shap-metric-label {
+      font-size: 12px;
+      font-weight: 600;
+      text-align: right;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .shap-metric-emerald {
+      color: var(--color-emerald);
+    }
+
+    .shap-metric-crimson {
+      color: var(--color-crimson);
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 1200px) {
+      .two-column-layout {
+        grid-template-columns: 1fr;
+      }
+      .sidebar {
+        width: 72px;
+        min-width: 72px;
+        padding: 20px 8px;
+      }
+      .brand-name, .nav-item a span {
+        display: none;
+      }
+      .nav-item a {
+        justify-content: center;
+        padding: 10px;
+      }
+    }
+
+    @media (max-width: 768px) {
+      body {
+        flex-direction: column;
+      }
+      .sidebar {
+        width: 100%;
+        height: auto;
+        flex-direction: row;
+        position: relative;
+        justify-content: space-between;
+      }
+      .nav-list {
+        flex-direction: row;
+      }
+      .kpi-grid {
+        grid-template-columns: 1fr;
+      }
+      .workspace {
+        padding: 20px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- LEFT NAVIGATION SIDEBAR -->
+  <aside class="sidebar" aria-label="Main Navigation">
+    <a href="index.html" class="brand-logo" title="Back to Main Hub">
+      <div class="brand-badge">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0B0F19" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
+          <polyline points="2 17 12 22 22 17"></polyline>
+          <polyline points="2 12 12 17 22 12"></polyline>
+        </svg>
+      </div>
+      <span class="brand-name">PredictIQ</span>
+    </a>
+
+    <ul class="nav-list">
+      <li class="nav-item">
+        <a href="index.html" title="Executive Dashboard">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="3" width="7" height="7" rx="1"></rect><rect x="14" y="3" width="7" height="7" rx="1"></rect><rect x="14" y="14" width="7" height="7" rx="1"></rect><rect x="3" y="14" width="7" height="7" rx="1"></rect></svg>
+          <span>Dashboard</span>
+        </a>
+      </li>
+      <li class="nav-item active">
+        <a href="what_if_simulator.html" title="What-If Scenario Simulator">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><line x1="4" y1="21" x2="4" y2="14"></line><line x1="4" y1="10" x2="4" y2="3"></line><line x1="12" y1="21" x2="12" y2="12"></line><line x1="12" y1="8" x2="12" y2="3"></line><line x1="20" y1="21" x2="20" y2="16"></line><line x1="20" y1="12" x2="20" y2="3"></line><line x1="1" y1="14" x2="7" y2="14"></line><line x1="9" y1="8" x2="15" y2="8"></line><line x1="17" y1="16" x2="23" y2="16"></line></svg>
+          <span>What-If</span>
+        </a>
+      </li>
+      <li class="nav-item">
+        <a href="index.html#sec-benchmark" title="Model Benchmark & Data Science">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M18 20V10"></path><path d="M12 20V4"></path><path d="M6 20v-6"></path></svg>
+          <span>Data Science</span>
+        </a>
+      </li>
+      <li class="nav-item">
+        <a href="index.html#sec-briefing" title="Predictive Analytics">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
+          <span>Analytics</span>
+        </a>
+      </li>
+      <li class="nav-item">
+        <a href="index.html#sec-reports" title="Export Reports">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>
+          <span>Exports</span>
+        </a>
+      </li>
+      <li class="nav-item">
+        <a href="index.html#sec-dataset" title="Dataset Studio & Settings">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+          <span>Settings</span>
+        </a>
+      </li>
+    </ul>
+  </aside>
+
+  <!-- MAIN WORKSPACE -->
+  <main class="workspace">
+    <!-- Header -->
+    <div class="page-header">
+      <h1>What-If Scenario Simulator</h1>
+    </div>
+
+    <!-- Two-Column Grid -->
+    <div class="two-column-layout">
+      
+      <!-- LEFT COLUMN: SCENARIO CONTROLS -->
+      <section class="left-col" aria-labelledby="sec-ctrl-title">
+        <h2 id="sec-ctrl-title" class="col-title">SCENARIO CONTROLS</h2>
+        
+        <div class="glass-card controls-card">
+          <div class="group-header">Commercial Levers</div>
+
+          <!-- Lever 1: Monthly Discount Rate -->
+          <div class="lever-item">
+            <div class="lever-top-row">
+              <span class="lever-name">Monthly Discount Rate</span>
+              <span class="lever-value-tag" id="val-discount">12%</span>
+            </div>
+            <span class="lever-subtext">Commercial slider set #00F2FE</span>
+            <div class="custom-slider-container">
+              <div class="slider-track-wrap">
+                <input type="range" min="0" max="12" value="12" step="1" id="slider-discount" class="slider-input" aria-label="Monthly Discount Rate">
+                <div class="slider-fill" id="fill-discount" style="width: 100%;"></div>
+              </div>
+              <div class="slider-labels">
+                <span>0</span>
+                <span>12</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Lever 2: Contract Length -->
+          <div class="lever-item">
+            <div class="lever-top-row">
+              <span class="lever-name">Contract Length</span>
+              <span class="lever-value-tag" id="val-contract">24 months</span>
+            </div>
+            <span class="lever-subtext" id="subtext-contract">Commercial slider se: 4 months</span>
+            <div class="custom-slider-container">
+              <div class="slider-track-wrap">
+                <input type="range" min="0" max="24" value="24" step="1" id="slider-contract" class="slider-input" aria-label="Contract Length">
+                <div class="slider-fill" id="fill-contract" style="width: 100%;"></div>
+              </div>
+              <div class="slider-labels">
+                <span>0</span>
+                <span>24</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Toggle: Exec Dashboard Adoption -->
+          <div class="toggle-row">
+            <div class="toggle-info">
+              <span class="lever-name">Exec Dashboard Adoption</span>
+              <span class="lever-subtext">Toggle: dashboard adoption</span>
+            </div>
+            <label class="switch-wrap" aria-label="Exec Dashboard Adoption Toggle">
+              <input type="checkbox" id="toggle-adoption" checked>
+              <span class="switch-slider"></span>
+            </label>
+          </div>
+
+          <!-- Reset Button -->
+          <button type="button" class="btn-reset" id="btn-reset">
+            <span>Reset to Baseline</span>
+            <span class="btn-reset-comment">border: 1px solid rgba(255,255,255,0.2)</span>
+          </button>
+        </div>
+      </section>
+
+      <!-- RIGHT COLUMN: LIVE PREDICTION OUTPUT -->
+      <section class="output-column" aria-labelledby="sec-out-title">
+        <h2 id="sec-out-title" class="col-title">LIVE PREDICTION OUTPUT</h2>
+
+        <!-- Top Row: 3 KPI Metric Cards -->
+        <div class="kpi-grid">
+          <!-- KPI 1 -->
+          <div class="glass-card kpi-card">
+            <span class="kpi-title">Predicted Risk Score</span>
+            <div class="kpi-val-row">
+              <span class="kpi-value tabular-nums" id="kpi-risk">14.2%</span>
+              <span class="delta-chip delta-crimson" id="kpi-risk-delta">↘ (-14.2%)</span>
+            </div>
+            <span class="kpi-subtext">Confidence Band: ±1.9%</span>
+          </div>
+
+          <!-- KPI 2 -->
+          <div class="glass-card kpi-card">
+            <span class="kpi-title">Forecasted LTV Impact</span>
+            <div class="kpi-val-row">
+              <span class="kpi-value tabular-nums" id="kpi-ltv">$48,900</span>
+              <span class="delta-chip delta-emerald" id="kpi-ltv-delta">(+$6,400)</span>
+            </div>
+            <span class="kpi-subtext" style="visibility: hidden;">Placeholder</span>
+          </div>
+
+          <!-- KPI 3 -->
+          <div class="glass-card kpi-card">
+            <span class="kpi-title">Anomaly Alerts Triggered</span>
+            <div class="kpi-val-row">
+              <span class="kpi-value tabular-nums" id="kpi-alerts">2</span>
+            </div>
+            <span class="kpi-subtext" style="visibility: hidden;">Placeholder</span>
+          </div>
+        </div>
+
+        <!-- Middle Card: 12-Month Outlook Area Chart -->
+        <div class="glass-card chart-card">
+          <div class="chart-header">
+            <h3 class="chart-title">Predicted Impact Trajectory (12-Month Outlook)</h3>
+          </div>
+          
+          <div class="chart-canvas-wrap">
+            <canvas id="outlookChart"></canvas>
+          </div>
+
+          <!-- Bottom Legend -->
+          <div class="chart-legend">
+            <div class="legend-item">
+              <div class="legend-line-cyan"></div>
+              <span>— Simulated Scenario</span>
+            </div>
+            <div class="legend-item">
+              <div class="legend-line-dashed"></div>
+              <span>- - Baseline</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Bottom Card: FEATURE ATTRIBUTION (SHAP DELTAS) -->
+        <div class="glass-card shap-card">
+          <div class="shap-header">
+            <span class="shap-title">FEATURE ATTRIBUTION (SHAP DELTAS)</span>
+            <div class="shap-axis-labels">
+              <span>UP</span>
+              <span>UP</span>
+              <span>DOWN</span>
+            </div>
+            <span class="star-icon" title="SHAP Significance Indicator">✦</span>
+          </div>
+
+          <div class="shap-bars-container">
+            <!-- Row 1: Contract Duration -->
+            <div class="shap-row">
+              <span class="shap-feature-name">Contract Duration</span>
+              <span class="shap-badge" id="badge-contract-shap">SHAP (-1.2%)</span>
+              <div class="shap-bar-track">
+                <div class="shap-bar-emerald" id="bar-emerald" style="width: 82%;"></div>
+              </div>
+              <span class="shap-metric-label shap-metric-emerald" id="metric-contract-pct">-4.57%</span>
+            </div>
+
+            <!-- Row 2: Open Tickets -->
+            <div class="shap-row">
+              <span class="shap-feature-name">Open Tickets</span>
+              <div class="shap-badge" id="badge-tickets-shap" style="visibility: hidden;">SHAP</div>
+              <div class="shap-bar-track" style="display: flex; justify-content: flex-start;">
+                <!-- crimson offset for diverging alignment -->
+                <div style="width: 15%; height: 100%;"></div>
+                <div class="shap-bar-crimson" id="bar-crimson" style="width: 28%;"></div>
+              </div>
+              <div style="display: flex; align-items: center; justify-content: flex-end; gap: 6px;">
+                <span class="shap-badge" style="font-size: 10px; opacity: 0.85;">SHAP (-1.35%)</span>
+                <span class="shap-metric-label shap-metric-crimson" id="metric-tickets-pct">+1.54%</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </section>
+
+    </div>
+  </main>
+
+  <script>
+    // ============================================================
+    // DYNAMIC INTERACTION & PREDICTION ENGINE (<10ms Latency)
+    // ============================================================
+    const sliderDiscount = document.getElementById('slider-discount');
+    const sliderContract = document.getElementById('slider-contract');
+    const toggleAdoption = document.getElementById('toggle-adoption');
+    const btnReset = document.getElementById('btn-reset');
+
+    const fillDiscount = document.getElementById('fill-discount');
+    const fillContract = document.getElementById('fill-contract');
+
+    const valDiscount = document.getElementById('val-discount');
+    const valContract = document.getElementById('val-contract');
+
+    const kpiRisk = document.getElementById('kpi-risk');
+    const kpiRiskDelta = document.getElementById('kpi-risk-delta');
+    const kpiLtv = document.getElementById('kpi-ltv');
+    const kpiLtvDelta = document.getElementById('kpi-ltv-delta');
+    const kpiAlerts = document.getElementById('kpi-alerts');
+
+    const barEmerald = document.getElementById('bar-emerald');
+    const barCrimson = document.getElementById('bar-crimson');
+    const metricContractPct = document.getElementById('metric-contract-pct');
+    const metricTicketsPct = document.getElementById('metric-tickets-pct');
+
+    // Canvas setup
+    const canvas = document.getElementById('outlookChart');
+    const ctx = canvas.getContext('2d');
+
+    function updateSliderFills() {
+      const discPct = (sliderDiscount.value / sliderDiscount.max) * 100;
+      fillDiscount.style.width = discPct + '%';
+      valDiscount.textContent = sliderDiscount.value + '%';
+
+      const contPct = (sliderContract.value / sliderContract.max) * 100;
+      fillContract.style.width = contPct + '%';
+      valContract.textContent = sliderContract.value + ' months';
+    }
+
+    function calculatePredictions() {
+      const discount = parseFloat(sliderDiscount.value);
+      const contract = parseFloat(sliderContract.value);
+      const adoption = toggleAdoption.checked;
+
+      // Base when discount=12, contract=24, adoption=true:
+      // Risk: 14.2%, Delta: ↘ (-14.2%), LTV: $48,900, Delta: (+$6,400), Alerts: 2
+      const discountDiff = discount - 12;
+      const contractDiff = contract - 24;
+      const adoptionDiff = adoption ? 0 : 5.8;
+
+      let riskScore = 14.2 + (discountDiff * 0.35) - (contractDiff * 0.25) + adoptionDiff;
+      riskScore = Math.max(1.5, Math.min(42.0, riskScore));
+
+      const riskDelta = -14.2 + (discountDiff * 0.3) - (contractDiff * 0.2) + adoptionDiff;
+      const deltaSign = riskDelta <= 0 ? '↘' : '↗';
+      const deltaText = `${deltaSign} (${riskDelta >= 0 ? '+' : ''}${riskDelta.toFixed(1)}%)`;
+
+      kpiRisk.textContent = riskScore.toFixed(1) + '%';
+      kpiRiskDelta.textContent = deltaText;
+
+      // LTV Calculation: base $48,900 with delta (+$6,400)
+      let ltvDeltaVal = 6400 + (contractDiff * 280) - (discountDiff * 320) - (adoption ? 0 : 4500);
+      let totalLtv = 42500 + ltvDeltaVal;
+      kpiLtv.textContent = '$' + Math.round(totalLtv).toLocaleString('en-US');
+      kpiLtvDelta.textContent = `(+${ltvDeltaVal >= 0 ? '$' : '-$'}${Math.abs(Math.round(ltvDeltaVal)).toLocaleString('en-US')})`;
+
+      // Anomaly Alerts
+      let alerts = 2;
+      if (discount > 10 && contract < 10) alerts = 4;
+      else if (!adoption) alerts = 3;
+      kpiAlerts.textContent = alerts;
+
+      // SHAP dynamic widths
+      const emeraldWidth = Math.min(95, Math.max(30, 82 * (contract / 24)));
+      barEmerald.style.width = emeraldWidth + '%';
+      metricContractPct.textContent = (-4.57 * (contract / 24)).toFixed(2) + '%';
+
+      const crimsonWidth = Math.min(60, Math.max(15, 28 * (discount / 12) + (adoption ? 0 : 15)));
+      barCrimson.style.width = crimsonWidth + '%';
+
+      renderChart(discount, contract, adoption);
+    }
+
+    function renderChart(discount, contract, adoption) {
+      // Hi-DPI scaling
+      const rect = canvas.getBoundingClientRect();
+      const dpr = window.devicePixelRatio || 1;
+      canvas.width = rect.width * dpr;
+      canvas.height = rect.height * dpr;
+      ctx.resetTransform();
+      ctx.scale(dpr, dpr);
+
+      const w = rect.width;
+      const h = rect.height;
+
+      ctx.clearRect(0, 0, w, h);
+
+      const paddingLeft = 40;
+      const paddingRight = 30;
+      const paddingTop = 25;
+      const paddingBottom = 30;
+
+      const chartW = w - paddingLeft - paddingRight;
+      const chartH = h - paddingTop - paddingBottom;
+
+      // Y-axis gridlines & labels (0, 5, 10, 15, 20)
+      const yTicks = [0, 5, 10, 15, 20];
+      ctx.font = '11px "JetBrains Mono", monospace';
+      ctx.fillStyle = '#64748B';
+      ctx.textAlign = 'right';
+      ctx.textBaseline = 'middle';
+
+      yTicks.forEach(tick => {
+        const yPos = paddingTop + chartH - (tick / 20) * chartH;
+        // Line
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(paddingLeft, yPos);
+        ctx.lineTo(paddingLeft + chartW, yPos);
+        ctx.stroke();
+
+        ctx.fillText(tick, paddingLeft - 10, yPos);
+      });
+
+      // X-axis labels: Jan, Feb, Mar, Apr, May, Jun, Sep, Nov, Dec
+      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Sep', 'Nov', 'Dec'];
+      const numPts = months.length;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'top';
+
+      const getX = (i) => paddingLeft + (i / (numPts - 1)) * chartW;
+      const getY = (val) => paddingTop + chartH - (val / 20) * chartH;
+
+      months.forEach((m, i) => {
+        const xPos = getX(i);
+        ctx.fillText(m, xPos, paddingTop + chartH + 10);
+      });
+
+      // Historical Points: Jan(4.2), Feb(5.8), Mar(5.2), Apr(6.8)
+      const hist = [4.2, 5.8, 5.2, 6.8];
+
+      // Baseline Points: Apr(6.8), May(7.4), Jun(7.8), Sep(8.3), Nov(8.7), Dec(9.2)
+      const baseline = [6.8, 7.4, 7.8, 8.3, 8.7, 9.2];
+
+      // Simulated Points: dynamically affected by levers
+      const simBoost = (contract / 24) * 5 + (adoption ? 3 : 0) + (discount / 12) * 1.5;
+      const simulated = [
+        6.8,
+        8.9 + (simBoost * 0.2),
+        10.4 + (simBoost * 0.4),
+        12.6 + (simBoost * 0.6),
+        14.8 + (simBoost * 0.8),
+        15.8 + (simBoost * 0.95)
+      ];
+
+      // Draw Historical Solid Line (Jan to Apr)
+      ctx.beginPath();
+      ctx.strokeStyle = '#94A3B8';
+      ctx.lineWidth = 2;
+      for (let i = 0; i <= 3; i++) {
+        const x = getX(i);
+        const y = getY(hist[i]);
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+
+      // Draw Baseline Dashed Line (Apr to Dec)
+      ctx.beginPath();
+      ctx.strokeStyle = '#64748B';
+      ctx.lineWidth = 2;
+      ctx.setLineDash([5, 5]);
+      for (let i = 3; i < numPts; i++) {
+        const bIdx = i - 3;
+        const x = getX(i);
+        const y = getY(baseline[bIdx]);
+        if (bIdx === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+      ctx.setLineDash([]); // Reset dash
+
+      // Area fill for Simulated Scenario
+      ctx.beginPath();
+      ctx.moveTo(getX(3), getY(simulated[0]));
+      for (let i = 3; i < numPts; i++) {
+        const sIdx = i - 3;
+        ctx.lineTo(getX(i), getY(simulated[sIdx]));
+      }
+      // Close fill to baseline
+      for (let i = numPts - 1; i >= 3; i--) {
+        const bIdx = i - 3;
+        ctx.lineTo(getX(i), getY(baseline[bIdx]));
+      }
+      ctx.closePath();
+      ctx.fillStyle = 'rgba(0, 242, 254, 0.12)';
+      ctx.fill();
+
+      // Draw Solid Cyan Line for Simulated Scenario with Electric Glow
+      ctx.save();
+      ctx.shadowColor = 'rgba(0, 242, 254, 0.85)';
+      ctx.shadowBlur = 10;
+      ctx.beginPath();
+      ctx.strokeStyle = '#00F2FE';
+      ctx.lineWidth = 2.5;
+      for (let i = 3; i < numPts; i++) {
+        const sIdx = i - 3;
+        const x = getX(i);
+        const y = getY(simulated[sIdx]);
+        if (sIdx === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+      ctx.restore();
+
+      // Annotation text "rgba(0, 242, 254, 0.1)" under the curve near Nov/Dec
+      ctx.font = '10px "JetBrains Mono", monospace';
+      ctx.fillStyle = '#64748B';
+      ctx.textAlign = 'right';
+      ctx.fillText('rgba(0, 242, 254, 0.1)', getX(7) + 20, getY(baseline[4]) + 16);
+
+      // Gaussian Peak 1: Over May (index 4)
+      const mayX = getX(4);
+      const mayPeakY = getY(10.2);
+      drawGaussianBell(ctx, mayX, getY(baseline[1]), mayPeakY, 'rgba(0, 242, 254, 0.25)', '#00F2FE', '0.33%');
+
+      // Gaussian Peak 2: Over Sep (index 6)
+      const sepX = getX(6);
+      const sepPeakY = getY(16.0);
+      drawGaussianBell(ctx, sepX, getY(baseline[3]), sepPeakY, 'rgba(0, 242, 254, 0.35)', '#00F2FE', '0.44%');
+    }
+
+    function drawGaussianBell(ctx, xCenter, baseY, peakY, fillColor, strokeColor, label) {
+      const width = 45;
+      ctx.save();
+      ctx.beginPath();
+      ctx.moveTo(xCenter - width, baseY);
+
+      // Bell curve bezier
+      ctx.bezierCurveTo(
+        xCenter - width * 0.45, baseY,
+        xCenter - width * 0.25, peakY,
+        xCenter, peakY
+      );
+      ctx.bezierCurveTo(
+        xCenter + width * 0.25, peakY,
+        xCenter + width * 0.45, baseY,
+        xCenter + width, baseY
+      );
+      ctx.closePath();
+
+      ctx.fillStyle = fillColor;
+      ctx.fill();
+
+      ctx.strokeStyle = strokeColor;
+      ctx.lineWidth = 1.5;
+      ctx.shadowColor = 'rgba(0, 242, 254, 0.8)';
+      ctx.shadowBlur = 8;
+      ctx.stroke();
+      ctx.restore();
+
+      // Dashed centerline down
+      ctx.save();
+      ctx.setLineDash([2, 3]);
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+      ctx.beginPath();
+      ctx.moveTo(xCenter, peakY);
+      ctx.lineTo(xCenter, baseY);
+      ctx.stroke();
+      ctx.restore();
+
+      // Callout percentage tag over peak
+      ctx.font = '600 11px "JetBrains Mono", monospace';
+      ctx.fillStyle = '#00F2FE';
+      ctx.textAlign = 'center';
+      ctx.fillText(label, xCenter, peakY - 12);
+    }
+
+    // Event listeners
+    sliderDiscount.addEventListener('input', () => {
+      updateSliderFills();
+      calculatePredictions();
+    });
+
+    sliderContract.addEventListener('input', () => {
+      updateSliderFills();
+      calculatePredictions();
+    });
+
+    toggleAdoption.addEventListener('change', () => {
+      calculatePredictions();
+    });
+
+    btnReset.addEventListener('click', () => {
+      sliderDiscount.value = 12;
+      sliderContract.value = 24;
+      toggleAdoption.checked = true;
+      updateSliderFills();
+      calculatePredictions();
+    });
+
+    // Resize listener for sharp canvas redraw
+    window.addEventListener('resize', () => {
+      calculatePredictions();
+    });
+
+    // Initial run
+    updateSliderFills();
+    calculatePredictions();
+  </script>
+</body>
+</html>
