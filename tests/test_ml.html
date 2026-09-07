@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>PredictIQ ML Engine Verification Test Suite</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #12151C;
+      color: #EDEAE3;
+      padding: 2rem;
+      line-height: 1.6;
+    }
+    h1 { color: #D9A441; margin-bottom: 0.5rem; font-family: serif; }
+    .test-card {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 10px;
+      padding: 1.25rem;
+      margin-bottom: 1rem;
+    }
+    .pass { color: #4ade80; font-weight: 600; }
+    .fail { color: #f87171; font-weight: 600; }
+    .badge {
+      display: inline-block;
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-size: 0.8rem;
+      margin-right: 0.5rem;
+    }
+    .badge-pass { background: rgba(74, 222, 128, 0.15); color: #4ade80; }
+    .badge-fail { background: rgba(248, 113, 113, 0.15); color: #f87171; }
+    pre {
+      background: rgba(0, 0, 0, 0.35);
+      padding: 0.75rem;
+      border-radius: 6px;
+      overflow-x: auto;
+      font-size: 0.85rem;
+    }
+  </style>
+  <script src="../js/ml_engine.js"></script>
+</head>
+<body>
+  <h1>PredictIQ Client-Side ML Engine Test Suite</h1>
+  <p style="color: #9BA3AF; margin-bottom: 1.5rem;">Validating client-side CSV parsing, statistical quality profiling, regularized logistic regression, and ROC-AUC evaluation.</p>
+
+  <div id="test-results">Running tests...</div>
+
+  <script>
+    const results = [];
+
+    function assert(name, condition, details = '') {
+      results.push({ name, pass: !!condition, details });
+    }
+
+    // 1. Test CSV Parser
+    const rawCSV = `id,age,spend,churn
+1,25,120.50,No
+2,45,350.00,Yes
+3,65,45.00,"No"
+4,30,10.00,Yes`;
+
+    const parsed = window.ML.parseCSV(rawCSV);
+    assert('CSV Parser Headers', parsed.headers.length === 4 && parsed.headers[0] === 'id');
+    assert('CSV Parser Row Count', parsed.rows.length === 4);
+    assert('CSV Quoted Value Handling', parsed.rows[2].churn === 'No');
+
+    // 2. Test Column Analysis & Target Detection
+    const colInfo = window.ML.analyzeColumns(parsed.headers, parsed.rows);
+    assert('ID Column Detection', colInfo['id'].looksLikeId === true);
+    assert('Numeric Column Detection', colInfo['spend'].isNumeric === true);
+    const target = window.ML.detectTargetColumn(parsed.headers, parsed.rows, colInfo);
+    assert('Target Column Detection', target === 'churn');
+
+    // 3. Test Quality Scoring & Tukey Outliers
+    const quality = window.ML.computeQuality(parsed.headers, parsed.rows, target);
+    assert('Quality Score Calculation', quality.quality_score > 70 && quality.quality_score <= 100);
+
+    // 4. Test Feature Matrix Vectorization
+    const matrix = window.ML.buildFeatureMatrix(parsed.headers, parsed.rows, target, colInfo);
+    assert('Feature Matrix Rows', matrix.X.length === 4);
+    assert('Labels Binary Binary', matrix.y.every(v => v === 0 || v === 1));
+
+    // 5. Test Logistic Regression Convergence on Synthetic Data
+    const synthX = [];
+    const synthY = [];
+    for (let i = 0; i < 80; i++) {
+      const x1 = Math.random() * 2 - 1;
+      const x2 = Math.random() * 2 - 1;
+      const label = (x1 + x2 > 0) ? 1 : 0;
+      synthX.push([x1, x2]);
+      synthY.push(label);
+    }
+    const split = window.ML.splitTrainTest(synthX, synthY, 0.25);
+    const lrModel = window.ML.trainLogisticRegression(split.trainX, split.trainY, { epochs: 200, lr: 0.5, l2: 0.01 });
+    const probs = window.ML.predictProbabilities(split.testX, lrModel.weights, lrModel.bias);
+    const evalResult = window.ML.evaluateBinary(split.testY, probs);
+    assert('Logistic Regression Convergence (Accuracy > 70%)', evalResult.accuracy >= 70, `Accuracy: ${evalResult.accuracy}%`);
+
+    // 6. Test Confusion Matrix Sum
+    const cm = evalResult.confusion;
+    const totalCM = cm.tp + cm.fp + cm.fn + cm.tn;
+    assert('Confusion Matrix Partition Completeness', totalCM === split.testX.length, `Total: ${totalCM} == Test Count: ${split.testX.length}`);
+
+    // 7. Test Trapezoidal ROC-AUC
+    const roc = window.ML.computeROC(split.testY, probs);
+    assert('ROC-AUC Bounded (50% - 100%)', roc.auc >= 50 && roc.auc <= 100, `AUC: ${roc.auc}%`);
+    assert('ROC Points Start and End (0,0 to 1,1)', roc.points[0].fpr === 0 && roc.points[roc.points.length - 1].fpr === 1);
+
+    // Render results
+    const container = document.getElementById('test-results');
+    const allPassed = results.every(r => r.pass);
+    container.innerHTML = `
+      <div style="font-size: 1.1rem; margin-bottom: 1.5rem; color: ${allPassed ? '#4ade80' : '#f87171'};">
+        ${allPassed ? '✓ All ' + results.length + ' tests passed successfully!' : '✗ Some tests failed.'}
+      </div>
+      ${results.map(r => `
+        <div class="test-card">
+          <span class="badge ${r.pass ? 'badge-pass' : 'badge-fail'}">${r.pass ? 'PASS' : 'FAIL'}</span>
+          <strong>${r.name}</strong>
+          ${r.details ? `<div style="font-size: 0.85rem; color: #9BA3AF; margin-top: 0.25rem;">${r.details}</div>` : ''}
+        </div>
+      `).join('')}
+    `;
+  </script>
+</body>
+</html>

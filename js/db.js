@@ -708,6 +708,12 @@ class RelationalDatabase {
     return record;
   }
 
+  deleteRows(tableName, filterFn) {
+    if (!this.tables[tableName]) return;
+    this.tables[tableName] = this.tables[tableName].filter(row => !filterFn(row));
+    this.persist();
+  }
+
   // Helper getters for key briefing queries
   getDatasetByDomain(domain) {
     const res = this.query(`SELECT * FROM datasets WHERE domain = '${domain}' LIMIT 1`);
@@ -797,6 +803,33 @@ class RelationalDatabase {
     } catch (e) {
       return null;
     }
+  }
+
+  // Clear session utility: purges tables and IndexedDB records
+  async clearSession() {
+    this.resetDemoData();
+    try {
+      const db = await this._openDB();
+      const tx = db.transaction('store', 'readwrite');
+      const store = tx.objectStore('store');
+      store.delete('db_tables');
+      await new Promise((resolve) => {
+        tx.oncomplete = () => resolve(true);
+        tx.onerror = () => resolve(false);
+      });
+    } catch (e) {
+      console.warn('Error clearing IndexedDB session:', e);
+    }
+  }
+
+  // Dynamically map incoming parsed rows into SQL table structure
+  createDynamicTable(tableName, rows) {
+    if (!rows || !rows.length) return;
+    this.tables[tableName] = rows.map((r, i) => ({
+      _rowid_: i + 1,
+      ...r
+    }));
+    this.persist();
   }
 }
 

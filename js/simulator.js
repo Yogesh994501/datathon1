@@ -19,7 +19,11 @@ const Simulator = {
     if (!state) return;
 
     const config = state.getDomainConfig();
-    this.baseProb = parseFloat(config.primaryProbability);
+    if (state.mode === 'live' && state.liveBenchmark && state.liveBenchmark.predictions && state.liveBenchmark.predictions.length) {
+      this.baseProb = parseFloat(state.liveBenchmark.predictions[0].probability);
+    } else {
+      this.baseProb = parseFloat(config.primaryProbability);
+    }
     this.currentSimulatedProb = this.baseProb;
 
     const slidersHtml = config.simulatorParams.map(param => `
@@ -44,7 +48,7 @@ const Simulator = {
     `).join('');
 
     this.container.innerHTML = `
-      <div style="display: grid; grid-template-columns: 1.2fr 1fr; gap: 2rem; align-items: start;">
+      <div class="simulator-layout-grid">
         <div>
           <h3 style="margin-bottom: 0.5rem;">Input variable controls</h3>
           <p class="body-copy" style="margin-bottom: 1.5rem;">Adjust operational variables to evaluate sensitivity on the predicted outcome.</p>
@@ -128,26 +132,58 @@ const Simulator = {
     const form = document.getElementById('simulator-form');
     if (!form) return;
 
+    const state = window.predictiqState;
     const sliders = form.querySelectorAll('input[type="range"]');
-    let deltaSum = 0;
+    let simulated = this.baseProb;
+    let delta = 0;
 
-    sliders.forEach(s => {
-      const min = parseFloat(s.min);
-      const max = parseFloat(s.max);
-      const val = parseFloat(s.value);
-      const norm = (val - min) / (max - min); // 0 to 1
-      // Sliders 0 and 1 reduce risk as they increase; slider 2 (tickets) increases risk
-      const id = s.getAttribute('data-param-id');
-      if (id === 'tickets') {
-        deltaSum += (norm - 0.5) * 30; // complaints increase risk
-      } else {
-        deltaSum -= (norm - 0.5) * 35; // engagement / spend decrease risk
-      }
-    });
+    if (state && state.mode === 'live' && state.liveBenchmark && state.liveBenchmark.mlSession && window.ML) {
+      const session = state.liveBenchmark.mlSession;
+      const baseRecord = (state.liveDataset && state.liveDataset.sampleRows && state.liveDataset.sampleRows.length)
+        ? { ...state.liveDataset.sampleRows[0] }
+        : {};
 
-    let simulated = this.baseProb + deltaSum;
-    if (simulated < 5) simulated = 5;
-    if (simulated > 98) simulated = 98;
+      const topFeatures = state.liveBenchmark.featureImportances || [];
+      sliders.forEach((s, idx) => {
+        const min = parseFloat(s.min);
+        const max = parseFloat(s.max);
+        const val = parseFloat(s.value);
+        const norm = (val - min) / (max - min); // 0 to 1
+        const paramId = s.getAttribute('data-param-id');
+
+        const targetFeature = session.featureNames.find(f => f.key && f.key.toLowerCase() === paramId.toLowerCase())
+          || (topFeatures[idx] ? session.featureNames.find(f => f.label === topFeatures[idx].feature_name) : null);
+
+        if (targetFeature && targetFeature.type === 'numeric' && session.numericMeta && session.numericMeta[targetFeature.key]) {
+          const meta = session.numericMeta[targetFeature.key];
+          baseRecord[targetFeature.key] = meta.min + norm * (meta.max - meta.min);
+        }
+      });
+
+      const prob = window.ML.predictOne(baseRecord, session);
+      simulated = Math.min(99, Math.max(1, +(prob * 100).toFixed(1)));
+      delta = simulated - this.baseProb;
+    } else {
+      let deltaSum = 0;
+      sliders.forEach(s => {
+        const min = parseFloat(s.min);
+        const max = parseFloat(s.max);
+        const val = parseFloat(s.value);
+        const norm = (val - min) / (max - min); // 0 to 1
+        const id = s.getAttribute('data-param-id');
+        if (id === 'tickets') {
+          deltaSum += (norm - 0.5) * 30; // complaints increase risk
+        } else {
+          deltaSum -= (norm - 0.5) * 35; // engagement / spend decrease risk
+        }
+      });
+
+      simulated = this.baseProb + deltaSum;
+      if (simulated < 5) simulated = 5;
+      if (simulated > 98) simulated = 98;
+      delta = simulated - this.baseProb;
+    }
+
     this.currentSimulatedProb = simulated;
 
     // Drive The Signal & MotionSceneController live from slider state
@@ -156,7 +192,7 @@ const Simulator = {
       window.Signal.setSimulatorValue(1 - simulated / 100);
     }
     if (window.MotionSceneController) {
-      window.MotionSceneController.setSimulatorState(simulated, deltaSum);
+      window.MotionSceneController.setSimulatorState(simulated, delta);
     }
 
     const outcomeEl = document.getElementById('sim-outcome-val');

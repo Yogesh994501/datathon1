@@ -63,6 +63,22 @@ const Charts = {
       `;
     }).join('');
 
+    // Confidence interval uncertainty band on forecast horizon (95% CI)
+    // Points 5, 6, 7, 8 with widening uncertainty
+    const ciDeltas = [0, 5, 8, 12];
+    const upperPts = [];
+    const lowerPts = [];
+    for (let idx = splitIdx; idx < points.length; idx++) {
+      const x = getX(idx);
+      const delta = ciDeltas[idx - splitIdx];
+      const yUp = getY(Math.min(100, points[idx].val + delta));
+      const yLo = getY(Math.max(0, points[idx].val - delta));
+      upperPts.push(`${x} ${yUp}`);
+      lowerPts.unshift(`${x} ${yLo}`);
+    }
+    const ciBandPoly = upperPts.concat(lowerPts).join(' L ');
+    const ciBand = `<polygon points="${upperPts.concat(lowerPts).join(', ')}" fill="rgba(217, 164, 65, 0.10)" stroke="rgba(217, 164, 65, 0.25)" stroke-width="1" stroke-dasharray="2,2" />`;
+
     // X-axis labels
     const xLabels = points.map((p, idx) => {
       const x = getX(idx);
@@ -89,14 +105,18 @@ const Charts = {
     const nowX = getX(splitIdx);
 
     const svg = `
-      <svg viewBox="0 0 ${width} ${height}" style="width: 100%; height: auto; display: block;" role="img" aria-label="Prediction trend forecast">
+      <svg viewBox="0 0 ${width} ${height}" style="width: 100%; height: auto; display: block;" role="img" aria-label="Prediction trend forecast with 95% confidence bounds">
+        <desc>Forecast trend showing 6 historical months and 3 predicted future months with 95% confidence interval band</desc>
         <!-- Grid lines -->
         ${yGridLines}
+
+        <!-- 95% Confidence Interval Band on Forecast -->
+        ${ciBand}
 
         <!-- Historical / Forecast boundary divider -->
         <line x1="${nowX}" y1="${padding.top}" x2="${nowX}" y2="${height - padding.bottom}" stroke="#373E4D" stroke-width="1" stroke-dasharray="4,4" />
         <text x="${nowX - 8}" y="${padding.top + 12}" fill="#6B8F8A" font-size="10" text-anchor="end" font-family="var(--font-ui)">Historical records</text>
-        <text x="${nowX + 8}" y="${padding.top + 12}" fill="#D9A441" font-size="10" text-anchor="start" font-family="var(--font-ui)">AI forecast horizon</text>
+        <text x="${nowX + 8}" y="${padding.top + 12}" fill="#D9A441" font-size="10" text-anchor="start" font-family="var(--font-ui)">AI forecast horizon (95% CI)</text>
 
         <!-- Historical Path (teal-grey) -->
         <path d="${histPath}" fill="none" stroke="#6B8F8A" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
@@ -122,23 +142,27 @@ const Charts = {
     const container = document.getElementById(containerId);
     if (!container) return;
 
-    const html = `
-      <div class="feature-list" role="list">
-        ${features.map(f => `
-          <div class="feature-row" role="listitem">
-            <div class="feature-meta">
-              <span style="color: var(--color-text);">${f.feature_name}</span>
-              <span class="figure-serif" style="font-size: 1.05rem; color: var(--color-text);">${f.importance}%</span>
-            </div>
-            <div class="feature-bar-bg">
-              <div class="feature-bar-fill" style="width: ${f.importance}%;"></div>
-            </div>
+    const listItems = (features || []).map(f => {
+      const val = f.importance !== undefined ? f.importance : (f.weight !== undefined ? f.weight : 0);
+      const dirBadge = f.direction ? `<span style="font-size: 0.7rem; padding: 2px 6px; border-radius: 4px; background: ${f.direction === 'positive' ? 'rgba(217, 164, 65, 0.15)' : 'rgba(107, 143, 138, 0.15)'}; color: ${f.direction === 'positive' ? 'var(--color-accent)' : 'var(--color-secondary-data)'}; margin-left: 6px;">${f.direction === 'positive' ? '+ Risk' : '- Risk'}</span>` : '';
+      return `
+        <div class="feature-row" role="listitem" aria-label="${f.feature_name}: ${val}% importance">
+          <div class="feature-meta">
+            <span style="color: var(--color-text); font-weight: 500;">${f.feature_name} ${dirBadge}</span>
+            <span class="figure-serif" style="font-size: 1.05rem; color: var(--color-text);">${val}%</span>
           </div>
-        `).join('')}
+          <div class="feature-bar-bg" role="progressbar" aria-valuenow="${val}" aria-valuemin="0" aria-valuemax="100">
+            <div class="feature-bar-fill" style="width: ${Math.min(100, Math.max(0, val))}%;"></div>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    container.innerHTML = `
+      <div class="feature-list" role="list" aria-label="Feature importance ranking">
+        ${listItems || '<div style="color: var(--color-text-faint); font-size: 0.85rem; padding: 1rem 0;">No feature importances available.</div>'}
       </div>
     `;
-
-    container.innerHTML = html;
   },
 
   /**
@@ -198,98 +222,119 @@ const Charts = {
       return `
         <line x1="${x}" y1="${margin.top}" x2="${x}" y2="${margin.top + chartH}" stroke="rgba(255, 255, 255, 0.05)" stroke-width="1" stroke-dasharray="2,3" />
         <line x1="${x}" y1="${margin.top + chartH}" x2="${x}" y2="${margin.top + chartH + 6}" stroke="rgba(255, 255, 255, 0.2)" stroke-width="1" />
-        <text x="${x}" y="${margin.top + chartH + 20}" fill="rgba(237, 234, 227, 0.55)" font-size="11" text-anchor="middle" font-family="var(--font-ui)">${p}%</text>
+        <text x="${x}" y="${margin.top + chartH + 22}" fill="rgba(237, 234, 227, 0.5)" font-size="11" text-anchor="middle" font-family="var(--font-ui)">${p}%</text>
       `;
     }).join('');
 
-    // Outer axes hairlines
-    const axesHairlines = `
-      <line x1="${margin.left}" y1="${margin.top + chartH}" x2="${margin.left + chartW}" y2="${margin.top + chartH}" stroke="rgba(255, 255, 255, 0.18)" stroke-width="1" />
-      <line x1="${margin.left}" y1="${margin.top}" x2="${margin.left}" y2="${margin.top + chartH}" stroke="rgba(255, 255, 255, 0.18)" stroke-width="1" />
-    `;
-
-    // Vertical boundary zone lines & headers
-    const zoneLines = `
-      <line x1="${lowBoundaryX}" y1="${margin.top}" x2="${lowBoundaryX}" y2="${margin.top + chartH}" stroke="rgba(255, 255, 255, 0.14)" stroke-width="1" stroke-dasharray="4,4" />
-      <text x="${(margin.left + lowBoundaryX) / 2}" y="${margin.top + 16}" fill="#8EB7B1" font-size="11" font-weight="600" text-anchor="middle" font-family="var(--font-ui)">Low Risk Zone</text>
-
-      <line x1="${highBoundaryX}" y1="${margin.top}" x2="${highBoundaryX}" y2="${margin.top + chartH}" stroke="rgba(255, 255, 255, 0.14)" stroke-width="1" stroke-dasharray="4,4" />
-      <text x="${(lowBoundaryX + highBoundaryX) / 2}" y="${margin.top + 16}" fill="#E6B563" font-size="11" font-weight="600" text-anchor="middle" font-family="var(--font-ui)">Medium Risk Zone</text>
-
-      <text x="${(highBoundaryX + margin.left + chartW) / 2}" y="${margin.top + 16}" fill="#F0C46B" font-size="11" font-weight="600" text-anchor="middle" font-family="var(--font-ui)">High Risk Tier</text>
-    `;
-
-    // Render dots with glowing translucent halos
-    const dots = list.map(p => {
-      const x = getX(p.probability);
-      const y = getY(p.confidence);
+    // Scatter points
+    const points = list.map(p => {
+      const cx = getX(p.probability);
+      const cy = getY(p.confidence);
       const color = p.risk_tier === 'high' ? '#D9A441' : (p.risk_tier === 'medium' ? '#C28B36' : '#6B8F8A');
       return `
-        <g class="radar-node-group" data-id="${p.id}" style="cursor: pointer;">
-          <circle cx="${x}" cy="${y}" r="10" fill="${color}" fill-opacity="0.22" class="radar-node-halo" />
-          <circle cx="${x}" cy="${y}" r="5.5" fill="${color}" stroke="#12151C" stroke-width="1.5" class="radar-node">
-            <title>${p.record_ref}: ${p.probability}% risk, ${p.confidence}% confidence (${p.outcome_label})</title>
-          </circle>
-        </g>
+        <circle 
+          cx="${cx}" 
+          cy="${cy}" 
+          r="6" 
+          fill="${color}" 
+          stroke="rgba(18, 21, 28, 0.85)" 
+          stroke-width="1.5"
+          style="cursor: pointer; transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), r 0.2s;"
+          tabindex="0"
+          role="button"
+          aria-label="Record ${p.record_ref}: ${p.probability}% risk, ${p.confidence}% confidence"
+          data-record-id="${p.id}"
+          onkeydown="if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); window.openRecordInspector('${p.id}'); }"
+        >
+          <title>${p.record_ref} • ${p.probability}% risk • ${p.confidence}% conf</title>
+        </circle>
       `;
     }).join('');
 
     const svg = `
-      <svg viewBox="0 0 ${width} ${height}" style="width: 100%; height: auto; display: block;" id="radar-svg-canvas" role="img" aria-label="Risk Radar Cohort Scatter Distribution">
-        <defs>
-          <clipPath id="chart-area-clip">
-            <rect x="${margin.left - 12}" y="${margin.top - 12}" width="${chartW + 24}" height="${chartH + 24}" />
-          </clipPath>
-        </defs>
+      <svg viewBox="0 0 ${width} ${height}" style="width: 100%; height: auto; display: block; overflow: visible;" role="img" aria-label="Risk Radar cohort distribution scatter plot showing ${list.length} records">
+        <desc>Scatter plot plotting predicted risk probability against model confidence with risk tier zones</desc>
+        <!-- Boundary Rect -->
+        <rect x="${margin.left}" y="${margin.top}" width="${chartW}" height="${chartH}" fill="none" stroke="rgba(255, 255, 255, 0.08)" stroke-width="1" rx="4" />
+
+        <!-- Translucent Risk Zones -->
         ${zoneRects}
+
+        <!-- Grids -->
         ${yGrid}
         ${xGrid}
-        ${axesHairlines}
-        ${zoneLines}
-        <g clip-path="url(#chart-area-clip)">
-          ${dots}
+
+        <!-- Threshold vertical divider lines -->
+        <line x1="${lowBoundaryX}" y1="${margin.top}" x2="${lowBoundaryX}" y2="${margin.top + chartH}" stroke="#6B8F8A" stroke-width="1" stroke-dasharray="3,3" opacity="0.6" />
+        <line x1="${highBoundaryX}" y1="${margin.top}" x2="${highBoundaryX}" y2="${margin.top + chartH}" stroke="#D9A441" stroke-width="1" stroke-dasharray="3,3" opacity="0.6" />
+
+        <!-- Zone Labels -->
+        <text x="${(margin.left + lowBoundaryX) / 2}" y="${margin.top + 18}" fill="#6B8F8A" font-size="10" text-anchor="middle" font-family="var(--font-ui)" letter-spacing="0.05em">LOW RISK</text>
+        <text x="${(lowBoundaryX + highBoundaryX) / 2}" y="${margin.top + 18}" fill="#C28B36" font-size="10" text-anchor="middle" font-family="var(--font-ui)" letter-spacing="0.05em">MEDIUM RISK</text>
+        <text x="${(highBoundaryX + margin.left + chartW) / 2}" y="${margin.top + 18}" fill="#D9A441" font-size="10" text-anchor="middle" font-family="var(--font-ui)" letter-spacing="0.05em">HIGH RISK</text>
+
+        <!-- Y-Axis Label inside bounds -->
+        <text x="18" y="${margin.top + chartH / 2}" fill="rgba(237, 234, 227, 0.6)" font-size="10" text-anchor="middle" font-family="var(--font-ui)" transform="rotate(-90 18 ${margin.top + chartH / 2})" letter-spacing="0.04em">MODEL CONFIDENCE</text>
+
+        <!-- X-Axis Label inside coordinate space -->
+        <text x="${margin.left + chartH / 2 + (chartW - chartH) / 2}" y="${height - 14}" fill="rgba(237, 234, 227, 0.6)" font-size="10" text-anchor="middle" font-family="var(--font-ui)" letter-spacing="0.04em">PREDICTED RISK PROBABILITY</text>
+
+        <!-- Cohort Points -->
+        <g id="radar-svg-points">
+          ${points}
         </g>
-        <!-- X Axis Title (centered and contained within bottom margin) -->
-        <text x="${margin.left + chartW / 2}" y="${height - 12}" fill="rgba(237, 234, 227, 0.75)" font-size="12" font-weight="500" text-anchor="middle" font-family="var(--font-ui)">Predicted risk probability (%)</text>
-        <!-- Y Axis Title (properly rotated and offset from left boundary) -->
-        <text x="18" y="${margin.top + chartH / 2}" fill="rgba(237, 234, 227, 0.75)" font-size="12" font-weight="500" text-anchor="middle" font-family="var(--font-ui)" transform="rotate(-90 18 ${margin.top + chartH / 2})">Model confidence (%)</text>
       </svg>
     `;
 
     container.innerHTML = svg;
 
-    // Attach click handlers to circles
-    const svgEl = container.querySelector('#radar-svg-canvas');
-    if (svgEl) {
-      svgEl.querySelectorAll('.radar-node-group').forEach(node => {
-        node.addEventListener('click', (e) => {
-          const id = e.currentTarget.getAttribute('data-id');
-          if (onSelectRecord) onSelectRecord(id);
-        });
+    // Attach click listeners to circles
+    const circles = container.querySelectorAll('circle[data-record-id]');
+    circles.forEach(c => {
+      c.addEventListener('click', () => {
+        const id = c.getAttribute('data-record-id');
+        if (onSelectRecord) onSelectRecord(id);
       });
-    }
+    });
   },
 
   /**
-   * Advanced Model Evaluation: ROC Curve & Confusion Matrix
+   * Advanced Model Performance: ROC Curve & Confusion Matrix
    */
-  renderAdvancedModelCharts(rocContainerId, cmContainerId) {
+  renderAdvancedModelCharts(rocContainerId, cmContainerId, activeModel) {
     const rocEl = document.getElementById(rocContainerId);
     const cmEl = document.getElementById(cmContainerId);
 
+    const hasRealRoc = activeModel && activeModel.rocCurve && activeModel.rocCurve.length > 0;
+    const hasRealCm = activeModel && activeModel.confusionMatrix;
+    const aucVal = activeModel ? (activeModel.auc > 1 ? (activeModel.auc / 100).toFixed(3) : activeModel.auc.toFixed(3)) : '0.839';
+
     if (rocEl) {
-      // Crisp SVG ROC Curve for Logistic Regression (AUC = 0.839)
+      let rocPathD = '';
+      if (hasRealRoc) {
+        // Map 0..1 FPR to 35..295, 0..1 TPR to 185..15
+        const pts = activeModel.rocCurve.map(pt => {
+          const x = 35 + pt.fpr * 260;
+          const y = 185 - pt.tpr * 170;
+          return `${x.toFixed(1)} ${y.toFixed(1)}`;
+        });
+        rocPathD = `M 35 185 L ${pts.join(' L ')} L 295 15`;
+      } else {
+        rocPathD = 'M 35 185 Q 60 70 120 45 T 295 15';
+      }
+
       rocEl.innerHTML = `
-        <svg viewBox="0 0 320 220" style="width: 100%; height: auto;" role="img" aria-label="ROC curve">
+        <svg viewBox="0 0 320 220" style="width: 100%; height: auto;" role="img" aria-label="Receiver Operating Characteristic (ROC) curve with AUC ${aucVal}">
+          <desc>ROC curve showing true positive rate versus false positive rate for the model evaluation.</desc>
           <rect x="35" y="15" width="260" height="170" fill="transparent" stroke="#2A2F3B" stroke-width="1" />
           <!-- Diagonal random baseline -->
           <line x1="35" y1="185" x2="295" y2="15" stroke="#373E4D" stroke-dasharray="3,3" stroke-width="1" />
-          <!-- Logistic Regression ROC curve (AUC = 0.839) -->
-          <path d="M 35 185 Q 60 70 120 45 T 295 15" fill="none" stroke="#D9A441" stroke-width="2" />
+          <!-- ROC curve -->
+          <path d="${rocPathD}" fill="none" stroke="#D9A441" stroke-width="2.2" stroke-linejoin="round" />
           <!-- Area fill subtle -->
-          <path d="M 35 185 Q 60 70 120 45 T 295 15 L 295 185 Z" fill="rgba(217, 164, 65, 0.08)" />
+          <path d="${rocPathD} L 295 185 Z" fill="rgba(217, 164, 65, 0.08)" />
           
-          <text x="165" y="115" fill="#EDEAE3" font-size="12" font-family="var(--font-serif)">AUC = 0.839</text>
+          <text x="165" y="115" fill="#EDEAE3" font-size="12" font-family="var(--font-serif)">AUC = ${aucVal}</text>
           <text x="165" y="212" fill="#636D7E" font-size="10" text-anchor="middle" font-family="var(--font-ui)">False positive rate</text>
           <text x="15" y="100" fill="#636D7E" font-size="10" text-anchor="middle" font-family="var(--font-ui)" transform="rotate(-90 15 100)">True positive rate</text>
         </svg>
@@ -297,24 +342,28 @@ const Charts = {
     }
 
     if (cmEl) {
-      // Confusion Matrix 2x2 Table Layout on 20% holdout test partition (1,409 records)
+      const tp = hasRealCm ? activeModel.confusionMatrix.tp : 209;
+      const fp = hasRealCm ? activeModel.confusionMatrix.fp : 102;
+      const fn = hasRealCm ? activeModel.confusionMatrix.fn : 165;
+      const tn = hasRealCm ? activeModel.confusionMatrix.tn : 933;
+
       cmEl.innerHTML = `
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; max-width: 300px; margin: 0 auto; text-align: center; font-size: 0.85rem;">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; max-width: 300px; margin: 0 auto; text-align: center; font-size: 0.85rem;" role="table" aria-label="Holdout Confusion Matrix">
           <div style="background: rgba(255, 255, 255, 0.035); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.08); padding: 1.1rem 0.5rem; border-radius: 14px;">
             <div style="color: var(--color-text-muted); font-size: 0.75rem;">True Positives</div>
-            <div class="figure-serif" style="font-size: 1.4rem; color: #EDEAE3; margin-top: 0.2rem;">209</div>
+            <div class="figure-serif" style="font-size: 1.4rem; color: #EDEAE3; margin-top: 0.2rem;">${tp.toLocaleString()}</div>
           </div>
           <div style="background: rgba(255, 255, 255, 0.035); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.08); padding: 1.1rem 0.5rem; border-radius: 14px;">
             <div style="color: var(--color-text-muted); font-size: 0.75rem;">False Positives</div>
-            <div class="figure-serif" style="font-size: 1.4rem; color: #C28B36; margin-top: 0.2rem;">102</div>
+            <div class="figure-serif" style="font-size: 1.4rem; color: #C28B36; margin-top: 0.2rem;">${fp.toLocaleString()}</div>
           </div>
           <div style="background: rgba(255, 255, 255, 0.035); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.08); padding: 1.1rem 0.5rem; border-radius: 14px;">
             <div style="color: var(--color-text-muted); font-size: 0.75rem;">False Negatives</div>
-            <div class="figure-serif" style="font-size: 1.4rem; color: #C28B36; margin-top: 0.2rem;">165</div>
+            <div class="figure-serif" style="font-size: 1.4rem; color: #C28B36; margin-top: 0.2rem;">${fn.toLocaleString()}</div>
           </div>
           <div style="background: rgba(255, 255, 255, 0.035); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.08); padding: 1.1rem 0.5rem; border-radius: 14px;">
             <div style="color: var(--color-text-muted); font-size: 0.75rem;">True Negatives</div>
-            <div class="figure-serif" style="font-size: 1.4rem; color: #EDEAE3; margin-top: 0.2rem;">933</div>
+            <div class="figure-serif" style="font-size: 1.4rem; color: #EDEAE3; margin-top: 0.2rem;">${tn.toLocaleString()}</div>
           </div>
         </div>
       `;

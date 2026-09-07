@@ -108,7 +108,29 @@ class AppStateManager {
     this.selectedModelId = null;
     this.selectedRecordId = null;
     this.riskFilter = 'all'; // all | high | medium | low
+    this.mode = 'demo'; // 'demo' | 'live'
+    this.liveDataset = null;
+    this.liveBenchmark = null;
     this.subscribers = [];
+  }
+
+  setMode(mode) {
+    this.mode = mode;
+    this.notify();
+  }
+
+  setLiveResults(dataset, benchmark) {
+    this.liveDataset = dataset;
+    this.liveBenchmark = benchmark;
+    this.mode = 'live';
+    this.notify();
+  }
+
+  resetToDemo() {
+    this.mode = 'demo';
+    this.liveDataset = null;
+    this.liveBenchmark = null;
+    this.notify();
   }
 
   getDomainConfig() {

@@ -35,10 +35,24 @@ document.addEventListener('DOMContentLoaded', async () => {
   const resetDataBtn = document.getElementById('btn-reset-demo-db');
   if (resetDataBtn) {
     resetDataBtn.addEventListener('click', async () => {
-      window.predictiqDb.resetDemoData();
-      await window.predictiqDb.persist();
+      await window.predictiqDb.clearSession();
+      state.resetToDemo();
+      const dot = document.getElementById('mode-status-dot');
+      const txt = document.getElementById('mode-status-text');
+      const badge = document.getElementById('mode-status-badge');
+      if (dot) dot.style.color = 'var(--color-accent)';
+      if (txt) txt.textContent = 'Demo Benchmark';
+      if (badge) {
+        badge.classList.remove('badge-high');
+        badge.classList.add('badge-subtle');
+        badge.title = 'Demonstration benchmark mode. Upload a dataset in Dataset Studio to train live models.';
+      }
+      const prepContainer = document.getElementById('prep-progress-container');
+      if (prepContainer) prepContainer.style.display = 'none';
+      const feedback = document.getElementById('upload-complete-note');
+      if (feedback) feedback.style.display = 'none';
       renderAll(state);
-      alert('Demo database reset to original benchmark seed.');
+      showToast('Demo database and benchmark models reset to seed state.', 'info');
     });
   }
 
@@ -47,6 +61,65 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (exportDbBtn) {
     exportDbBtn.addEventListener('click', () => {
       window.Reports.exportDatabaseDump();
+    });
+  }
+
+  // 5b. Setup Session Export action
+  const exportSessionBtn = document.getElementById('btn-export-session');
+  if (exportSessionBtn) {
+    exportSessionBtn.addEventListener('click', () => {
+      const sessionPayload = {
+        version: "3.0-briefing",
+        exported_at: new Date().toISOString(),
+        mode: state.mode,
+        domain: state.currentDomain,
+        dataset: state.liveDataset,
+        benchmark: state.liveBenchmark
+      };
+      const jsonStr = JSON.stringify(sessionPayload, null, 2);
+      const blob = new Blob([jsonStr], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `predictiq_session_${Date.now()}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      showToast('Exported full analysis session JSON.', 'success');
+    });
+  }
+
+  // 5c. Setup Session Import action
+  const importSessionBtn = document.getElementById('btn-import-session');
+  const importSessionInput = document.getElementById('input-import-session');
+  if (importSessionBtn && importSessionInput) {
+    importSessionBtn.addEventListener('click', () => importSessionInput.click());
+    importSessionInput.addEventListener('change', async (e) => {
+      if (!e.target.files.length) return;
+      try {
+        const file = e.target.files[0];
+        const text = await file.text();
+        const imported = JSON.parse(text);
+        if (imported.dataset && imported.benchmark) {
+          state.setLiveResults(imported.dataset, imported.benchmark);
+          const badge = document.getElementById('mode-status-badge');
+          const dot = document.getElementById('mode-status-dot');
+          const txt = document.getElementById('mode-status-text');
+          if (dot) dot.style.color = '#38bdf8';
+          if (txt) txt.textContent = `Imported: ${imported.dataset.name.substring(0, 14)}`;
+          if (badge) {
+            badge.classList.remove('badge-subtle');
+            badge.classList.add('badge-high');
+          }
+          renderAll(state);
+          showToast(`Imported session with ${imported.benchmark.modelRuns.length} models!`, 'success');
+        } else {
+          showToast('Invalid session JSON: missing dataset or benchmark models.', 'info');
+        }
+      } catch (err) {
+        showToast(`Failed to parse session JSON: ${err.message}`, 'info');
+      }
     });
   }
 
@@ -74,7 +147,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       advDrawer.style.display = isHidden ? 'block' : 'none';
       advToggleBtn.textContent = isHidden ? 'Hide advanced model details' : 'View advanced model details';
       if (isHidden) {
-        window.Charts.renderAdvancedModelCharts('roc-chart-container', 'cm-chart-container');
+        window.Charts.renderAdvancedModelCharts('roc-chart-container', 'cm-chart-container', state.currentActiveModel || null);
       }
     });
   }
@@ -157,15 +230,27 @@ function renderAll(state) {
   const config = state.getDomainConfig();
   const db = window.predictiqDb;
 
-  // Retrieve dataset & models for active domain from SQLite
-  const dataset = db.getDatasetByDomain(state.currentDomain);
-  const modelRuns = dataset ? db.getModelRunsByDataset(dataset.id) : [];
-  const recommendedModel = dataset ? db.getRecommendedModel(dataset.id) : null;
-  const activeModel = recommendedModel || (modelRuns.length ? modelRuns[0] : null);
+  let dataset, modelRuns, recommendedModel, activeModel, predictions, features;
 
-  // Retrieve predictions & feature importance from SQLite
-  const predictions = activeModel ? db.getPredictionsByModel(activeModel.id) : [];
-  const features = activeModel ? db.getFeatureImportances(activeModel.id) : [];
+  if (state.mode === 'live' && state.liveDataset && state.liveBenchmark) {
+    dataset = state.liveDataset;
+    modelRuns = state.liveBenchmark.modelRuns || [];
+    recommendedModel = state.liveBenchmark.recommendedModel;
+    activeModel = recommendedModel || (modelRuns.length ? modelRuns[0] : null);
+    predictions = state.liveBenchmark.predictions || [];
+    features = state.liveBenchmark.featureImportances || [];
+  } else {
+    // Retrieve dataset & models for active domain from SQLite
+    dataset = db.getDatasetByDomain(state.currentDomain);
+    modelRuns = dataset ? db.getModelRunsByDataset(dataset.id) : [];
+    recommendedModel = dataset ? db.getRecommendedModel(dataset.id) : null;
+    activeModel = recommendedModel || (modelRuns.length ? modelRuns[0] : null);
+    predictions = activeModel ? db.getPredictionsByModel(activeModel.id) : [];
+    features = activeModel ? db.getFeatureImportances(activeModel.id) : [];
+  }
+
+  // Cache activeModel on state
+  state.currentActiveModel = activeModel;
 
   // Forward Real Application State to MotionSceneController
   if (window.MotionSceneController) {
@@ -182,7 +267,7 @@ function renderAll(state) {
     window.MotionSceneController.setRiskFilter(state.riskFilter || 'all');
   }
 
-  // 1. Update Executive Briefing Stat Row (from real DB query)
+  // 1. Update Executive Briefing Stat Row (from real DB query or live ML)
   const statAcc = document.getElementById('stat-model-acc');
   const statRows = document.getElementById('stat-records-evaluated');
   const statConf = document.getElementById('stat-avg-confidence');
@@ -192,14 +277,32 @@ function renderAll(state) {
   if (statAcc && activeModel) statAcc.textContent = `${activeModel.accuracy}%`;
   if (statRows && dataset) statRows.textContent = dataset.row_count.toLocaleString();
   if (statConf && activeModel) statConf.textContent = `${activeModel.auc}%`;
-  if (statExposure) statExposure.textContent = config.impactDisplay;
-  if (statExposureLabel) statExposureLabel.textContent = config.exposureLabel;
+  if (statExposure) {
+    if (state.mode === 'live') {
+      statExposure.textContent = `${activeModel ? activeModel.auc : 84}% AUC`;
+    } else {
+      statExposure.textContent = config.impactDisplay;
+    }
+  }
+  if (statExposureLabel) {
+    if (state.mode === 'live') {
+      statExposureLabel.textContent = 'Holdout Discrimination';
+    } else {
+      statExposureLabel.textContent = config.exposureLabel;
+    }
+  }
 
   // 2. Update Contextual Terminology & Headlines
   const domainTitle = document.getElementById('briefing-domain-title');
   const domainDesc = document.getElementById('briefing-domain-desc');
-  if (domainTitle) domainTitle.textContent = config.name;
-  if (domainDesc) domainDesc.textContent = `Forecast model calibrated for ${config.targetConcept.toLowerCase()}.`;
+  if (domainTitle) {
+    domainTitle.textContent = state.mode === 'live' ? `Live Model: ${dataset.name}` : config.name;
+  }
+  if (domainDesc) {
+    domainDesc.textContent = state.mode === 'live'
+      ? `Real client-side ML benchmark trained on ${dataset.row_count.toLocaleString()} records with target "${dataset.targetColumn || 'outcome'}".`
+      : `Forecast model calibrated for ${config.targetConcept.toLowerCase()}.`;
+  }
 
   // 3. Render Forecast Trend SVG Chart
   window.Charts.renderTrendChart('trend-chart-container', state.currentDomain);
@@ -217,10 +320,16 @@ function renderAll(state) {
   renderRiskRadarSection(state);
 
   // 8. Render AI Executive Memo
-  renderExecutiveMemoSection(config, activeModel);
+  renderExecutiveMemoSection(config, activeModel, state);
 
   // 9. Re-render Simulator with domain controls
   window.Simulator.init('simulator-container');
+
+  // 10. Update Advanced Model Charts if drawer is open
+  const advDrawer = document.getElementById('adv-model-drawer');
+  if (advDrawer && advDrawer.style.display === 'block') {
+    window.Charts.renderAdvancedModelCharts('roc-chart-container', 'cm-chart-container', activeModel);
+  }
 }
 
 function renderDatasetSection(dataset, config) {
@@ -238,8 +347,8 @@ function renderDatasetSection(dataset, config) {
   if (rowCountEl) rowCountEl.textContent = dataset.row_count.toLocaleString();
   if (colCountEl) colCountEl.textContent = dataset.column_count;
   if (missingEl) missingEl.textContent = `${dataset.missing_pct}%`;
-  if (duplicatesEl) duplicatesEl.textContent = dataset.duplicate_count;
-  if (outliersEl) outliersEl.textContent = dataset.outlier_count;
+  if (duplicatesEl) duplicatesEl.textContent = Number(dataset.duplicate_count).toLocaleString();
+  if (outliersEl) outliersEl.textContent = Number(dataset.outlier_count).toLocaleString();
   if (qualityEl) qualityEl.textContent = `${dataset.quality_score}%`;
   if (nameEl) nameEl.textContent = dataset.name;
   if (stampEl) stampEl.textContent = `Ingested: ${dataset.uploaded_at}`;
@@ -248,34 +357,52 @@ function renderDatasetSection(dataset, config) {
   const tableHead = document.getElementById('ds-preview-thead');
   const tableBody = document.getElementById('ds-preview-tbody');
   if (tableHead && tableBody) {
-    tableHead.innerHTML = `
-      <tr>
-        ${config.sampleColumns.map(col => `<th>${col}</th>`).join('')}
-      </tr>
-    `;
+    if (dataset.sampleRows && dataset.rawHeaders) {
+      // Dynamic table for real uploaded dataset
+      const headers = dataset.rawHeaders.slice(0, 7);
+      tableHead.innerHTML = `
+        <tr>
+          ${headers.map(col => `<th>${col}</th>`).join('')}
+        </tr>
+      `;
+      tableBody.innerHTML = dataset.sampleRows.map(row => `
+        <tr>
+          ${headers.map((h, idx) => {
+            const val = row[h] !== undefined && row[h] !== null ? String(row[h]) : '—';
+            return `<td style="${idx === 0 ? 'font-weight: 500;' : ''}">${val.length > 32 ? val.substring(0, 30) + '…' : val}</td>`;
+          }).join('')}
+        </tr>
+      `).join('');
+    } else {
+      // Sample records from benchmark telco churn dataset
+      tableHead.innerHTML = `
+        <tr>
+          ${config.sampleColumns.map(col => `<th>${col}</th>`).join('')}
+        </tr>
+      `;
 
-    // Sample records from genuine telco churn dataset
-    const sampleRows = [
-      { id: '7590-VHVEG', tenure: '1 mo', monthly: '$29.85', total: '$29.85', contract: 'Month-to-month', internet: 'DSL', churn: 'Yes (82.4%)', tier: 'high' },
-      { id: '5575-GNVDE', tenure: '34 mo', monthly: '$56.95', total: '$1889.50', contract: 'One year', internet: 'DSL', churn: 'Yes (79.1%)', tier: 'high' },
-      { id: '3668-QPYBK', tenure: '2 mo', monthly: '$53.85', total: '$108.15', contract: 'Month-to-month', internet: 'DSL', churn: 'Yes (77.8%)', tier: 'high' },
-      { id: '7795-CFOCW', tenure: '45 mo', monthly: '$42.30', total: '$1840.75', contract: 'One year', internet: 'DSL', churn: 'No (38.2%)', tier: 'medium' },
-      { id: '9763-GRSKD', tenure: '13 mo', monthly: '$49.95', total: '$587.45', contract: 'Month-to-month', internet: 'DSL', churn: 'No (43.6%)', tier: 'medium' },
-      { id: '10484-ZVOXZ', tenure: '68 mo', monthly: '$89.50', total: '$6132.80', contract: 'Two year', internet: 'Fiber optic', churn: 'No (22.8%)', tier: 'low' },
-      { id: '10487-PCHMG', tenure: '71 mo', monthly: '$20.10', total: '$1411.00', contract: 'Two year', internet: 'No', churn: 'No (16.4%)', tier: 'low' }
-    ];
+      const sampleRows = [
+        { id: '7590-VHVEG', tenure: '1 mo', monthly: '$29.85', total: '$29.85', contract: 'Month-to-month', internet: 'DSL', churn: 'Yes (82.4%)', tier: 'high' },
+        { id: '5575-GNVDE', tenure: '34 mo', monthly: '$56.95', total: '$1889.50', contract: 'One year', internet: 'DSL', churn: 'Yes (79.1%)', tier: 'high' },
+        { id: '3668-QPYBK', tenure: '2 mo', monthly: '$53.85', total: '$108.15', contract: 'Month-to-month', internet: 'DSL', churn: 'Yes (77.8%)', tier: 'high' },
+        { id: '7795-CFOCW', tenure: '45 mo', monthly: '$42.30', total: '$1840.75', contract: 'One year', internet: 'DSL', churn: 'No (38.2%)', tier: 'medium' },
+        { id: '9763-GRSKD', tenure: '13 mo', monthly: '$49.95', total: '$587.45', contract: 'Month-to-month', internet: 'DSL', churn: 'No (43.6%)', tier: 'medium' },
+        { id: '10484-ZVOXZ', tenure: '68 mo', monthly: '$89.50', total: '$6132.80', contract: 'Two year', internet: 'Fiber optic', churn: 'No (22.8%)', tier: 'low' },
+        { id: '10487-PCHMG', tenure: '71 mo', monthly: '$20.10', total: '$1411.00', contract: 'Two year', internet: 'No', churn: 'No (16.4%)', tier: 'low' }
+      ];
 
-    tableBody.innerHTML = sampleRows.map(r => `
-      <tr>
-        <td style="font-weight: 500;">${r.id}</td>
-        <td>${r.tenure}</td>
-        <td>${r.monthly}</td>
-        <td>${r.total}</td>
-        <td>${r.contract}</td>
-        <td>${r.internet}</td>
-        <td><span class="badge ${r.tier === 'high' ? 'badge-high' : (r.tier === 'medium' ? 'badge-medium' : 'badge-low')}">${r.churn}</span></td>
-      </tr>
-    `).join('');
+      tableBody.innerHTML = sampleRows.map(r => `
+        <tr>
+          <td style="font-weight: 500;">${r.id}</td>
+          <td>${r.tenure}</td>
+          <td>${r.monthly}</td>
+          <td>${r.total}</td>
+          <td>${r.contract}</td>
+          <td>${r.internet}</td>
+          <td><span class="badge ${r.tier === 'high' ? 'badge-high' : (r.tier === 'medium' ? 'badge-medium' : 'badge-low')}">${r.churn}</span></td>
+        </tr>
+      `).join('');
+    }
   }
 }
 
@@ -284,19 +411,22 @@ function renderModelBenchmarkSection(modelRuns, activeModel) {
   if (!tbody) return;
 
   const algoLabels = {
+    'logistic_regression': 'L2 Regularized Logistic Regression',
+    'decision_tree': 'Decision Tree (CART Gini)',
+    'naive_bayes': 'Gaussian Naive Bayes',
+    'ensemble': 'Soft-Voting Ensemble (LR + DT + GNB)',
     'xgboost': 'XGBoost (Gradient Boosted Trees)',
     'random_forest': 'Random Forest Ensemble',
-    'neural_network': 'Multi-Layer Perceptron',
-    'logistic_regression': 'Regularized Logistic Regression'
+    'neural_network': 'Multi-Layer Perceptron'
   };
 
-  tbody.innerHTML = modelRuns.map(mr => {
+  tbody.innerHTML = (modelRuns || []).map(mr => {
     const isRec = mr.is_recommended === 1;
     return `
       <tr style="${isRec ? 'background: rgba(217, 164, 65, 0.08); font-weight: 500;' : ''}">
         <td>
           <div style="display: flex; align-items: center; gap: 0.5rem;">
-            <span>${algoLabels[mr.algorithm] || mr.algorithm}</span>
+            <span>${algoLabels[mr.algorithm] || mr.name || mr.algorithm}</span>
             ${isRec ? '<span class="badge badge-high" style="font-size: 0.7rem;">Recommended</span>' : ''}
           </div>
         </td>
@@ -313,13 +443,12 @@ function renderModelBenchmarkSection(modelRuns, activeModel) {
   // Update recommendation note
   const recNoteEl = document.getElementById('model-recommendation-note');
   if (recNoteEl && activeModel) {
-    const isLR = activeModel.algorithm === 'logistic_regression';
-    recNoteEl.innerHTML = `<strong>Recommended model: ${algoLabels[activeModel.algorithm] || activeModel.algorithm}</strong> — provides highest AUC (${activeModel.auc}%) with calibrated discrimination on sparse features.`;
+    recNoteEl.innerHTML = `<strong>Recommended model: ${algoLabels[activeModel.algorithm] || activeModel.name || activeModel.algorithm}</strong> — provides highest AUC (${activeModel.auc}%) with calibrated discrimination on validation holdout.`;
   }
 }
 
 function renderPredictionCenterSection(predictions, features, config) {
-  const primary = predictions[0];
+  const primary = (predictions && predictions.length) ? predictions[0] : null;
   if (!primary) return;
 
   const probEl = document.getElementById('pred-headline-prob');
@@ -332,22 +461,68 @@ function renderPredictionCenterSection(predictions, features, config) {
   if (confEl) confEl.textContent = `${primary.confidence}% confidence`;
   if (recordEl) recordEl.textContent = primary.record_ref;
   if (outcomeLabelEl) outcomeLabelEl.textContent = primary.outcome_label;
-  if (expCopyEl) expCopyEl.textContent = config.explanationText;
+
+  let displayFeatures = features;
+  
+  if (window.predictiqState && window.predictiqState.mode === 'live' && window.predictiqState.liveBenchmark && window.predictiqState.liveBenchmark.mlSession) {
+    const session = window.predictiqState.liveBenchmark.mlSession;
+    const rawRow = (window.predictiqState.liveDataset && window.predictiqState.liveDataset.sampleRows) ? window.predictiqState.liveDataset.sampleRows[0] : null;
+    if (rawRow && session.weights && session.featureNames && window.ML) {
+      const vec = window.ML.vectorizeFromMeta(rawRow, session.featureNames, session.numericMeta, session.catMeta);
+      const attributions = session.featureNames.map((f, idx) => {
+        const c_i = (session.weights[idx] || 0) * (vec[idx] || 0);
+        return {
+          feature_name: f.label,
+          c_i: c_i,
+          abs_c: Math.abs(c_i),
+          direction: c_i >= 0 ? 'positive' : 'negative'
+        };
+      });
+      const totalAbs = attributions.reduce((sum, a) => sum + a.abs_c, 0) || 1;
+      attributions.sort((a, b) => b.abs_c - a.abs_c);
+      displayFeatures = attributions.slice(0, 7).map((a, idx) => ({
+        id: `attr_${idx + 1}`,
+        feature_name: a.feature_name,
+        importance: +((a.abs_c / totalAbs) * 100).toFixed(0),
+        weight: +((a.abs_c / totalAbs) * 100).toFixed(0),
+        direction: a.direction,
+        rank: idx + 1
+      })).filter(f => f.importance > 0);
+
+      const topPos = attributions.filter(a => a.direction === 'positive').slice(0, 2).map(a => a.feature_name);
+      const topNeg = attributions.filter(a => a.direction === 'negative').slice(0, 2).map(a => a.feature_name);
+      if (expCopyEl) {
+        let exp = `For entity <strong>${primary.record_ref}</strong>, elevated probability is driven by `;
+        if (topPos.length) exp += `<strong>${topPos.join('</strong> and <strong>')}</strong> (positive contribution <em>c<sub>i</sub> = w<sub>i</sub> · x<sub>i</sub></em>). `;
+        if (topNeg.length) exp += `Risk is moderated by <strong>${topNeg.join('</strong> and <strong>')}</strong>. `;
+        exp += `Calculated dynamically from live trained model coefficients.`;
+        expCopyEl.innerHTML = exp;
+      }
+    }
+  } else if (expCopyEl) {
+    expCopyEl.textContent = config.explanationText;
+  }
 
   // Render horizontal Feature Importance Bars
-  window.Charts.renderFeatureImportance('feature-importance-container', features);
+  window.Charts.renderFeatureImportance('feature-importance-container', displayFeatures);
 }
 
 function renderRiskRadarSection(state) {
   const db = window.predictiqDb;
   const config = state.getDomainConfig();
-  const dataset = db.getDatasetByDomain(state.currentDomain);
-  if (!dataset) return;
 
-  const recModel = db.getRecommendedModel(dataset.id);
-  if (!recModel) return;
-
-  const predictions = db.getPredictionsByModel(recModel.id);
+  let dataset, recModel, predictions;
+  if (state.mode === 'live' && state.liveDataset && state.liveBenchmark) {
+    dataset = state.liveDataset;
+    recModel = state.liveBenchmark.recommendedModel;
+    predictions = state.liveBenchmark.predictions || [];
+  } else {
+    dataset = db.getDatasetByDomain(state.currentDomain);
+    if (!dataset) return;
+    recModel = db.getRecommendedModel(dataset.id);
+    if (!recModel) return;
+    predictions = db.getPredictionsByModel(recModel.id);
+  }
 
   // Render SVG scatter
   window.Charts.renderRiskRadar('risk-radar-chart-container', predictions, state.riskFilter, (recordId) => {
@@ -380,14 +555,20 @@ function renderRiskRadarSection(state) {
   }
 }
 
-function renderExecutiveMemoSection(config, activeModel) {
+function renderExecutiveMemoSection(config, activeModel, state) {
   const findingEl = document.getElementById('memo-finding-text');
   const actionEl = document.getElementById('memo-action-text');
   const impactEl = document.getElementById('memo-impact-display');
 
-  if (findingEl) findingEl.textContent = config.memoFinding;
-  if (actionEl) actionEl.textContent = config.memoAction;
-  if (impactEl) impactEl.textContent = config.impactDisplay;
+  if (state && state.mode === 'live' && state.liveDataset && activeModel) {
+    if (findingEl) findingEl.innerHTML = `Live trained model <strong>${activeModel.name}</strong> achieves <strong>${activeModel.auc}% ROC-AUC</strong> with ${activeModel.accuracy}% accuracy across ${state.liveDataset.row_count.toLocaleString()} uploaded observations.`;
+    if (actionEl) actionEl.innerHTML = `Prioritize high-probability cohort records identified in Risk Radar. Model weights indicate primary operational factors are actionable.`;
+    if (impactEl) impactEl.textContent = `${activeModel.auc}% AUC`;
+  } else {
+    if (findingEl) findingEl.textContent = config.memoFinding;
+    if (actionEl) actionEl.textContent = config.memoAction;
+    if (impactEl) impactEl.textContent = config.impactDisplay;
+  }
 }
 
 // Global Toast Notification Helper
@@ -419,13 +600,18 @@ window.showToast = showToast;
 
 function openRecordInspector(recordId) {
   const db = window.predictiqDb;
+  let rec = null;
   const predictions = db.query(`SELECT * FROM predictions WHERE id = '${recordId}' LIMIT 1`);
-  if (!predictions.length) return;
-  const rec = predictions[0];
+  if (predictions.length) {
+    rec = predictions[0];
+  } else if (window.predictiqState && window.predictiqState.liveBenchmark && window.predictiqState.liveBenchmark.predictions) {
+    rec = window.predictiqState.liveBenchmark.predictions.find(p => p.id === recordId);
+  }
+  if (!rec) return;
   const recommendation = db.getRecommendationForPrediction(recordId);
   const actionPlan = db.getActionPlanForPrediction ? db.getActionPlanForPrediction(recordId) : null;
   const jsonPayload = window.Reports ? window.Reports.getRecordJSONPayload(recordId) : null;
-  const jsonStr = jsonPayload ? JSON.stringify(jsonPayload, null, 2) : '';
+  const jsonStr = jsonPayload ? JSON.stringify(jsonPayload, null, 2) : JSON.stringify(rec, null, 2);
 
   const drawer = document.getElementById('inspector-drawer-panel');
   const overlay = document.getElementById('inspector-overlay');
@@ -750,7 +936,7 @@ function setupDatasetUploadStudio(state) {
 
   fileInput.addEventListener('change', (e) => {
     if (e.target.files.length > 0) {
-      handleFileUpload(e.target.files[0].name, state);
+      handleFileUpload(e.target.files[0], state);
     }
   });
 
@@ -767,87 +953,237 @@ function setupDatasetUploadStudio(state) {
     e.preventDefault();
     dropZone.style.borderColor = 'var(--color-line)';
     if (e.dataTransfer.files.length > 0) {
-      handleFileUpload(e.dataTransfer.files[0].name, state);
+      handleFileUpload(e.dataTransfer.files[0], state);
     }
   });
 }
 
-function handleFileUpload(fileName, state) {
+async function handleFileUpload(file, state) {
   const db = window.predictiqDb;
   const prepContainer = document.getElementById('prep-progress-container');
   const prepChecklist = document.getElementById('prep-checklist-el');
+  const feedback = document.getElementById('upload-complete-note');
   if (!prepContainer || !prepChecklist) return;
+
+  // Reset feedback
+  if (feedback) {
+    feedback.style.display = 'none';
+    feedback.className = 'memo-card';
+  }
 
   prepContainer.style.display = 'block';
 
   const steps = [
-    'Detecting missing values and estimating imputation bounds',
-    'Identifying duplicate identifiers and canonical records',
-    'Isolating statistical distribution outliers',
-    'Encoding categorical ordinal and nominal variables',
-    'Scaling continuous numerical features',
-    'Partitioning stratified training and holdout validation sets'
+    { title: 'Detecting missing values and estimating imputation bounds', detail: 'Scanning column nulls...' },
+    { title: 'Identifying duplicate identifiers and canonical records', detail: 'Hash set verification...' },
+    { title: 'Isolating statistical distribution outliers', detail: '1.5 × IQR Tukey fence sweep...' },
+    { title: 'Encoding categorical ordinal and nominal variables', detail: 'Binary one-hot matrix...' },
+    { title: 'Scaling continuous numerical features', detail: 'Min-max unit interval normalization...' },
+    { title: 'Partitioning stratified training & holdout validation sets', detail: '80/20 train/test holdout...' }
   ];
 
   prepChecklist.innerHTML = steps.map((s, idx) => `
     <div class="prep-item" id="prep-step-${idx}">
       <div class="prep-item-left">
         <span class="check-indicator" id="check-ind-${idx}">✓</span>
-        <span>${s}</span>
+        <span>${s.title}</span>
       </div>
       <span style="font-size: 0.75rem; color: var(--color-text-faint);" id="step-status-${idx}">Pending...</span>
     </div>
   `).join('');
 
-  // Sequentially animate the automated preparation steps
-  // and drive The Signal's prep-progress in lock-step
-  window.Signal.setPrepProgress(0);
-  let currentStep = 0;
-  const interval = setInterval(() => {
-    if (currentStep < steps.length) {
-      const item = document.getElementById(`prep-step-${currentStep}`);
-      const status = document.getElementById(`step-status-${currentStep}`);
-      if (item) item.classList.add('completed');
-      if (status) {
-        status.textContent = 'Completed';
-        status.style.color = 'var(--color-secondary-data)';
-      }
-      currentStep++;
-      if (window.MotionSceneController) {
-        window.MotionSceneController.setPrepProgress(currentStep / steps.length);
-      }
-      if (window.Signal && window.Signal.setPrepProgress) {
-        window.Signal.setPrepProgress(currentStep / steps.length);
-      }
-    } else {
-      clearInterval(interval);
-
-      // Real SQL INSERT into datasets table
-      const newDataset = {
-        id: `ds_user_${Date.now()}`,
-        name: fileName,
-        domain: state.currentDomain,
-        row_count: Math.floor(65000 + Math.random() * 45000),
-        column_count: 26,
-        missing_pct: +(1.2 + Math.random() * 2).toFixed(1),
-        duplicate_count: Math.floor(40 + Math.random() * 80),
-        outlier_count: Math.floor(25 + Math.random() * 50),
-        quality_score: +(92.5 + Math.random() * 4).toFixed(1),
-        uploaded_at: new Date().toISOString().replace('T', ' ').substring(0, 19)
-      };
-
-      db.insertRow('datasets', newDataset);
-
-      // Re-render UI
-      renderDatasetSection(newDataset, state.getDomainConfig());
-
-      const feedback = document.getElementById('upload-complete-note');
-      if (feedback) {
-        feedback.style.display = 'block';
-        feedback.textContent = `File "${fileName}" parsed successfully and stored in SQLite database.`;
-      }
+  // 1. Read & parse file via window.ML
+  let parsed;
+  try {
+    parsed = await window.ML.parseFile(file);
+  } catch (err) {
+    if (feedback) {
+      feedback.style.display = 'block';
+      feedback.style.borderColor = 'rgba(239, 68, 68, 0.4)';
+      feedback.innerHTML = `<span style="color: #ef4444; font-weight: 500;">File read error:</span> ${err.message}`;
     }
-  }, 400);
+    return;
+  }
+
+  // 2. Statistical profiling & target detection via window.ML
+  const colInfo = window.ML.analyzeColumns(parsed.headers, parsed.rows);
+  const targetCol = window.ML.detectTargetColumn(parsed.headers, parsed.rows, colInfo) || parsed.headers[parsed.headers.length - 1];
+  const quality = window.ML.computeQuality(parsed.headers, parsed.rows, targetCol);
+  const matrix = window.ML.buildFeatureMatrix(parsed.headers, parsed.rows, targetCol, colInfo);
+  const split = window.ML.splitTrainTest(matrix.X, matrix.y, 0.2);
+
+  // Update step labels with real stats
+  steps[0].detail = `${quality.missing_pct}% missing (${quality.total_missing ? quality.total_missing.toLocaleString() : 0} nulls imputed)`;
+  steps[1].detail = `${quality.duplicate_count.toLocaleString()} duplicate rows detected`;
+  steps[2].detail = `${quality.outlier_count.toLocaleString()} outliers isolated (Tukey IQR)`;
+  steps[3].detail = `${matrix.featureNames.length} numerical inputs encoded (target: ${targetCol})`;
+  steps[4].detail = `Standardized / Min-Max scaled across ${matrix.featureNames.length} features`;
+  steps[5].detail = `Train: ${split.trainX.length} rows, Test: ${split.testX.length} rows (stratified)`;
+
+  // Animate checklist steps
+  for (let i = 0; i < steps.length; i++) {
+    await new Promise(r => setTimeout(r, 160));
+    const item = document.getElementById(`prep-step-${i}`);
+    const status = document.getElementById(`step-status-${i}`);
+    if (item) item.classList.add('completed');
+    if (status) {
+      status.textContent = steps[i].detail;
+      status.style.color = 'var(--color-secondary-data)';
+    }
+    if (window.MotionSceneController) {
+      window.MotionSceneController.setPrepProgress((i + 1) / steps.length);
+    }
+    if (window.Signal && window.Signal.setPrepProgress) {
+      window.Signal.setPrepProgress((i + 1) / steps.length);
+    }
+  }
+
+  // 3. Train models via window.ML
+  const trainingStatusEl = document.getElementById('step-status-5');
+  if (trainingStatusEl) {
+    trainingStatusEl.textContent = 'Training ML benchmark models in JavaScript...';
+  }
+
+  let benchmark;
+  try {
+    benchmark = window.ML.runFullBenchmark({
+      X: matrix.X,
+      y: matrix.y,
+      trainX: split.trainX,
+      trainY: split.trainY,
+      testX: split.testX,
+      testY: split.testY,
+      featureNames: matrix.featureNames,
+      rawRows: parsed.rows,
+      targetCol: targetCol,
+      positiveClass: matrix.positiveClass,
+      numericMeta: matrix.numericMeta,
+      catMeta: matrix.catMeta
+    });
+  } catch (mlErr) {
+    console.error('ML benchmark error:', mlErr);
+    if (feedback) {
+      feedback.style.display = 'block';
+      feedback.style.borderColor = 'rgba(239, 68, 68, 0.4)';
+      feedback.innerHTML = `<span style="color: #ef4444;">ML training error: ${mlErr.message}</span>`;
+    }
+    return;
+  }
+
+  if (trainingStatusEl) {
+    trainingStatusEl.textContent = `Stratified 80/20 Holdout (${split.testX.length} test records evaluated)`;
+  }
+
+  // 4. Build New Dataset Object
+  const newDataset = {
+    id: `ds_live_${Date.now()}`,
+    name: file.name,
+    domain: state.currentDomain,
+    row_count: quality.row_count,
+    column_count: quality.column_count,
+    missing_pct: quality.missing_pct,
+    duplicate_count: quality.duplicate_count,
+    outlier_count: quality.outlier_count,
+    quality_score: quality.quality_score,
+    uploaded_at: new Date().toISOString().replace('T', ' ').substring(0, 19),
+    rawHeaders: parsed.headers,
+    sampleRows: parsed.rows.slice(0, 8),
+    targetColumn: targetCol,
+    featureNames: matrix.featureNames.map(f => f.label)
+  };
+
+  // 5. Insert into SQLite
+  db.createDynamicTable('user_ingested_data', parsed.rows);
+  db.insertRow('datasets', {
+    id: newDataset.id,
+    name: newDataset.name,
+    domain: newDataset.domain,
+    row_count: newDataset.row_count,
+    column_count: newDataset.column_count,
+    missing_pct: newDataset.missing_pct,
+    duplicate_count: newDataset.duplicate_count,
+    outlier_count: newDataset.outlier_count,
+    quality_score: newDataset.quality_score,
+    uploaded_at: newDataset.uploaded_at
+  });
+
+  benchmark.modelRuns.forEach(mr => {
+    db.insertRow('model_runs', {
+      id: mr.id,
+      dataset_id: newDataset.id,
+      name: mr.name,
+      algorithm: mr.algorithm,
+      accuracy: mr.accuracy,
+      precision_score: mr.precision_score,
+      recall: mr.recall,
+      f1_score: mr.f1_score,
+      auc: mr.auc,
+      is_recommended: mr.is_recommended,
+      trained_at: mr.trained_at
+    });
+  });
+
+  benchmark.featureImportances.forEach(fi => {
+    db.insertRow('feature_importance', {
+      id: fi.id,
+      model_run_id: fi.model_run_id,
+      feature_name: fi.feature_name,
+      weight: fi.weight,
+      direction: fi.direction,
+      rank: fi.rank
+    });
+  });
+
+  benchmark.predictions.forEach(p => {
+    db.insertRow('predictions', {
+      id: p.id,
+      model_run_id: p.model_run_id,
+      record_ref: p.record_ref,
+      probability: p.probability,
+      confidence: p.confidence,
+      outcome_label: p.outcome_label,
+      risk_tier: p.risk_tier,
+      created_at: p.created_at
+    });
+  });
+
+  await db.persist();
+
+  // 7. Update Application State
+  state.setLiveResults(newDataset, benchmark);
+
+  // 8. Update Live Mode Header Badge
+  const modeBadge = document.getElementById('mode-status-badge');
+  const modeDot = document.getElementById('mode-status-dot');
+  const modeText = document.getElementById('mode-status-text');
+  if (modeDot) modeDot.style.color = '#38bdf8';
+  if (modeText) modeText.textContent = `Live ML: ${file.name.substring(0, 16)}`;
+  if (modeBadge) {
+    modeBadge.classList.remove('badge-subtle');
+    modeBadge.classList.add('badge-high');
+    modeBadge.title = `Live model trained on ${file.name} (${quality.row_count.toLocaleString()} rows). Click Reset demo to restore.`;
+  }
+
+  // 9. Completion Note & Toast
+  if (feedback) {
+    feedback.style.display = 'block';
+    feedback.style.borderColor = 'rgba(217, 164, 65, 0.4)';
+    feedback.innerHTML = `
+      <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem;">
+        <div>
+          <div style="font-weight: 600; color: var(--color-accent); margin-bottom: 0.25rem;">
+            ✓ Real ML Benchmark Trained: 4 client-side models fitted on ${quality.row_count.toLocaleString()} rows
+          </div>
+          <div style="font-size: 0.85rem; color: var(--color-text); line-height: 1.5;">
+            Recommended: <strong>${benchmark.recommendedModel.name}</strong> achieves <strong>${benchmark.recommendedModel.auc}% ROC-AUC</strong>, <strong>${benchmark.recommendedModel.accuracy}% Accuracy</strong>, and <strong>${benchmark.recommendedModel.f1_score}% F1</strong> on the 20% holdout test partition (${split.testX.length} records). Stored in SQLite.
+          </div>
+        </div>
+        <button type="button" class="btn btn-subtle btn-sm" onclick="switchView('models')">View Benchmark →</button>
+      </div>
+    `;
+  }
+
+  showToast(`Trained 4 ML models on ${file.name}! Top AUC: ${benchmark.recommendedModel.auc}%`, 'success');
 }
 
 window.openRecordInspector = openRecordInspector;

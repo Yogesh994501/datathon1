@@ -1,0 +1,41 @@
+customerID,tenure,MonthlyCharges,TotalCharges,Contract,InternetService,Churn
+7590-VHVEG,1,29.85,29.85,Month-to-month,DSL,Yes
+5575-GNVDE,34,56.95,1889.5,One year,DSL,No
+3668-QPYBK,2,53.85,108.15,Month-to-month,DSL,Yes
+7795-CFOCW,45,42.3,1840.75,One year,DSL,No
+9237-HQITU,2,70.7,151.65,Month-to-month,Fiber optic,Yes
+9305-CDSKC,8,99.65,820.5,Month-to-month,Fiber optic,Yes
+1452-KIOVK,22,89.1,1949.4,Month-to-month,Fiber optic,No
+6713-OKOMC,10,29.75,301.9,Month-to-month,DSL,No
+7892-POOKP,28,104.8,3046.05,Month-to-month,Fiber optic,Yes
+6388-TABGU,62,56.15,3487.95,One year,DSL,No
+9763-GRSKD,13,49.95,587.45,Month-to-month,DSL,Yes
+7469-LKBCI,16,18.95,326.8,Two year,No,No
+8091-TTVAX,58,100.35,5681.1,One year,Fiber optic,Yes
+5129-JFDZT,49,95.5,4627.85,Month-to-month,Fiber optic,No
+3655-SNQYZ,69,113.25,7895.15,Two year,Fiber optic,No
+3413-BMNZE,1,45.25,45.25,Month-to-month,DSL,No
+3186-AJIEK,66,105.65,6886.25,Two year,Fiber optic,No
+3638-WEABW,58,59.9,3505.1,Two year,DSL,No
+8665-UTKKB,12,19.8,245.3,One year,No,No
+5709-LVOEQ,71,25.0,1750.2,Two year,No,No
+4622-YNISU,23,55.45,1245.8,One year,DSL,No
+8012-SUDTG,4,79.85,315.4,Month-to-month,Fiber optic,Yes
+9420-LOOZW,1,70.15,70.15,Month-to-month,Fiber optic,Yes
+1960-UYCNN,10,75.25,750.5,Month-to-month,Fiber optic,No
+4190-MFLUW,10,55.2,525.0,Month-to-month,DSL,Yes
+3597-DVHQG,5,50.15,250.7,Month-to-month,DSL,No
+4367-NUYAO,60,25.75,1550.0,Two year,No,No
+8779-QRDMV,1,39.65,39.65,Month-to-month,DSL,Yes
+4801-JZAZL,11,29.6,346.45,Month-to-month,DSL,No
+2019-PWN Mand,38,69.5,2641.0,One year,Fiber optic,No
+5698-BQJHN,12,85.2,1022.4,Month-to-month,Fiber optic,Yes
+8168-UQWWP,7,78.5,549.5,Month-to-month,Fiber optic,Yes
+6877-LGWHE,4,45.3,181.2,Month-to-month,DSL,No
+1234-ABCDF,48,89.5,4296.0,Two year,Fiber optic,No
+5432-XYZAB,2,64.2,128.4,Month-to-month,Fiber optic,Yes
+9876-QWERT,36,54.1,1947.6,One year,DSL,No
+1122-POIUY,18,92.4,1663.2,Month-to-month,Fiber optic,Yes
+3344-LKJHG,70,110.5,7735.0,Two year,Fiber optic,No
+5566-MNBVC,3,30.2,90.6,Month-to-month,DSL,No
+7788-ZXCVB,24,40.1,962.4,One year,DSL,No

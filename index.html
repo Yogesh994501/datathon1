@@ -48,10 +48,17 @@
         <button type="button" class="nav-tab" data-view="reports">Reports</button>
       </nav>
 
-      <!-- Database & Demo Actions -->
-      <div style="display: flex; align-items: center; gap: 0.5rem;">
-        <button type="button" class="btn btn-subtle btn-sm" id="btn-reset-demo-db" title="Re-seed pristine benchmark dataset">Reset demo data</button>
-        <button type="button" class="btn btn-subtle btn-sm" id="btn-export-db-file" title="Export SQLite database as JSON">Export SQLite DB</button>
+      <!-- Database & Mode Indicator -->
+      <div style="display: flex; align-items: center; gap: 0.65rem;">
+        <div id="mode-status-badge" class="badge badge-subtle" style="font-size: 0.76rem;" role="status" aria-live="polite">
+          <span class="status-dot" id="mode-status-dot" style="color: var(--color-accent);"></span>
+          <span id="mode-status-text">Demo Benchmark</span>
+        </div>
+        <button type="button" class="btn btn-subtle btn-sm" id="btn-reset-demo-db" title="Re-seed pristine benchmark dataset">Reset demo</button>
+        <button type="button" class="btn btn-subtle btn-sm" id="btn-export-session" title="Export full session JSON (dataset + trained model params)">Export Session</button>
+        <button type="button" class="btn btn-subtle btn-sm" id="btn-import-session" title="Import previously saved session JSON">Import Session</button>
+        <input type="file" id="input-import-session" accept=".json" style="display: none;" />
+        <button type="button" class="btn btn-subtle btn-sm" id="btn-export-db-file" title="Export SQLite database as JSON">Export DB</button>
       </div>
     </div>
   </header>
@@ -371,7 +378,7 @@
       <div class="panel" id="adv-model-drawer" style="display: none;">
         <h3 class="panel-title" style="margin-bottom: 1rem;">Advanced model details (Logistic Regression)</h3>
         
-        <div style="display: grid; grid-template-columns: 1.2fr 1fr; gap: 2rem; align-items: start;">
+        <div class="simulator-layout-grid">
           <div>
             <h4 style="font-size: 0.95rem; margin-bottom: 0.5rem;">Receiver Operating Characteristic (ROC Curve)</h4>
             <p class="body-copy" style="font-size: 0.8rem; margin-bottom: 1rem;">Visualizing true positive rate vs. false positive rate across classification thresholds.</p>
@@ -382,6 +389,29 @@
             <h4 style="font-size: 0.95rem; margin-bottom: 0.5rem;">Confusion matrix (Test partition: 12,482 records)</h4>
             <p class="body-copy" style="font-size: 0.8rem; margin-bottom: 1rem;">Stratified classification performance on holdout test partition.</p>
             <div id="cm-chart-container"></div>
+          </div>
+        </div>
+
+        <!-- Model Card & Methodology Panel -->
+        <div style="margin-top: 1.5rem; padding-top: 1.25rem; border-top: var(--border-hairline);">
+          <h4 style="font-size: 0.95rem; margin-bottom: 0.75rem; color: var(--color-accent);">Model Card & Methodology Statement</h4>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; font-size: 0.82rem; color: var(--color-text-muted);">
+            <div style="background: rgba(255, 255, 255, 0.02); padding: 0.85rem; border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.05);">
+              <div style="color: var(--color-text); font-weight: 600; margin-bottom: 0.25rem;">Algorithm Architecture</div>
+              <div>Binary Logistic Regression with L2 Regularization & Stochastic Gradient Descent (SGD) link optimization.</div>
+            </div>
+            <div style="background: rgba(255, 255, 255, 0.02); padding: 0.85rem; border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.05);">
+              <div style="color: var(--color-text); font-weight: 600; margin-bottom: 0.25rem;">Validation Partition</div>
+              <div>80% Stratified Training split / 20% Holdout Test split preserving exact class prevalence balance.</div>
+            </div>
+            <div style="background: rgba(255, 255, 255, 0.02); padding: 0.85rem; border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.05);">
+              <div style="color: var(--color-text); font-weight: 600; margin-bottom: 0.25rem;">Probability Calibration</div>
+              <div>Sigmoid probability link function: σ(z) = 1 / (1 + e^-z) with decision threshold at p = 0.50.</div>
+            </div>
+            <div style="background: rgba(255, 255, 255, 0.02); padding: 0.85rem; border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.05);">
+              <div style="color: var(--color-text); font-weight: 600; margin-bottom: 0.25rem;">Feature Preprocessing</div>
+              <div>Min-Max normalization [0, 1] on numeric inputs; bounded binary one-hot encoding for categorical variables; Tukey IQR outlier fencing.</div>
+            </div>
           </div>
         </div>
       </div>
@@ -461,7 +491,7 @@
         </div>
 
         <!-- SVG Scatter Plot -->
-        <div id="risk-radar-chart-container" style="min-height: 280px; margin-bottom: 1.5rem;"></div>
+        <div id="risk-radar-chart-container" class="radar-chart-wrapper" style="min-height: 280px; margin-bottom: 1.5rem;"></div>
 
         <!-- Filterable Records Table -->
         <h4 style="margin-bottom: 0.75rem;">Assessed entities table</h4>
@@ -556,7 +586,10 @@
   </footer>
 
   <!-- Scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
   <script src="js/db.js"></script>
+  <script src="js/dataset_parser.js"></script>
+  <script src="js/ml_engine.js"></script>
   <script src="js/state.js"></script>
   <script src="js/charts.js"></script>
   <script src="js/pipeline.js"></script>
